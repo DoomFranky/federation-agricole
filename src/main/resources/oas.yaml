@@ -1,0 +1,184 @@
+openapi: 3.1.0
+info: 
+  title: OAS Specification - Federation agricole
+  version: 1.0.0
+servers: 
+- url: http://localhost:8080
+tags:
+  - name: Collectivite
+  - name: Membre
+  - name: Cotisation
+paths:
+  /collectivite/new:
+    put:
+      tags: 
+        - Collectivite
+      description: put new collective in the federation
+      requestBody:
+        description: membre necessary for the creation of the groupe
+        content:
+          application/json:
+            schema:
+              type: array 
+              items: 
+                $ref: '#/components/schemas/Membre'
+      parameters:
+        - name: autorisation
+          in: header
+          description: authorization from the federation
+          required: true
+          schema:
+            type: string
+        - name: localisation
+          in: header
+          description: location of the new collectivite
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: collective created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collectivite'
+  /membre/add:
+    put:
+      tags:
+        - Membre
+      description: add a new membre to the federation
+      requestBody:
+        description: necessary element needed to the admission
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdmissionMembre'
+      parameters:
+        - name: frais
+          in: header
+          description: the ref needed to be add
+          required: true
+          schema:
+            type: string
+      responses:
+        200: 
+          description: add the new membre in the federation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+  /cotisation:
+    put:
+      tags:
+        - Cotisation
+      description: pay the cotisation
+      requestBody:
+        description: necessary element to confirm the cotisation
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cotisation'
+      responses:
+        200:
+          description: the payment has been confirmed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: the payment has been confirmed
+components:
+  schemas:
+    Federation:
+      type: object
+      properties:
+        Dirigant:
+          $ref: '#/components/schemas/Membre'
+        ListOfCollectivite:
+          type: array
+          items: 
+            $ref: '#/components/schemas/Collectivite'
+    Collectivite:
+      type: object
+      properties:
+        id: 
+          type: integer
+        nom:
+          type: string
+        specialisation:
+          type: string
+        dateDeCreation:
+          type: string
+        localisation:
+          type: string
+        listOfMembre:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membre'
+    Membre:
+      type: object
+      properties:
+        dateDAdhesion:
+          type: string
+        post:
+          type: string
+          enum:
+            - President
+            - President adjoint
+            - Tresorier
+            - Secretaire
+            - Membre confirme
+            - Membre junior
+    AdmissionMembre:
+      type: object
+      properties:
+        parrainMembre:
+          $ref: '#/components/schemas/Membre'
+        nom:
+          type: string
+        prenom:
+          type: string
+        dateDeNaissance:
+          type: string
+        genre:
+          type: string
+          enum:
+            - M
+            - F
+        adresse:
+          type: string
+        metier:
+          type: string
+        telephone:
+          type: string
+        adresseMail:
+          type: string
+    Cotisation:
+      type: object
+      properties:
+        dateDEncaissement:
+          type: string
+    Person:
+      type: object
+      properties:
+        nom: 
+          type: string
+        prenom:
+          type: string
+        dateDeNaissance:
+          type: string
+        genre:
+          type: string
+          enum:
+            - M
+            - F
+        adresse:
+          type: string
+        metier:
+          type: string
+        telephone:
+          type: string
+        adressseMail:
+          type: string
+        
+
+        
