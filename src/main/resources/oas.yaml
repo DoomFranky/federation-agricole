@@ -68,16 +68,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/Membre'
   /cotisation:
+    get:
+      tags:
+        - Cotisation
+      description: get the cotisation
+      responses:
+        200:
+          description: the payment has been confirmed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cotisation'
+                example: the payment has been confirmed
+  /cotisation/{id}/pay:
     put:
       tags:
         - Cotisation
       description: pay the cotisation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
       requestBody:
         description: necessary element to confirm the cotisation
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Cotisation'
+              $ref: '#/components/schemas/Paiment'
       responses:
         200:
           description: the payment has been confirmed
@@ -114,6 +135,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Membre'
+        listOfCotisation:
+          type: array
+          items: 
+            $ref: '#/components/schemas/Cotisation'
     Membre:
       type: object
       properties:
@@ -174,12 +199,47 @@ components:
     Cotisation:
       type: object
       properties:
+        id:
+          type: integer
+        name:
+          type: string
+        encaissement:
+          $ref: '#/components/schemas/Encaisement'
+        periodisite:
+          type: string
+          enum:
+            - Mensuelle
+            - Annuelle
+            - Ponctuelle
+    Encaisement:
+      type: object
+      properties:
         dateDEncaissement:
           type: string
         montant:
           type: number
           format: decimal
-        
+        modeDePaiment:
+          type: string
+          enum: 
+           - Espece
+           - Virement
+           - MobileMoney
+    Paiment:
+      type: object
+      properties:
+        id:
+          type: string
+        montant:
+          type: number
+          format: decimal
+        modeDePaiment:
+          type: string
+          enum:
+            - Espece
+            - Virement
+            - MobileMoney
+    
         
 
         
