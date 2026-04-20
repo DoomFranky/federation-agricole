@@ -114,10 +114,32 @@ components:
       properties:
         Dirigant:
           $ref: '#/components/schemas/Membre'
+        ListOfAdjoint:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membre'
+        ListOfTresearer:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membre'
+        ListOfSecretairies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membre'
         ListOfCollectivite:
           type: array
           items: 
             $ref: '#/components/schemas/Collectivite'
+        Caisse:
+          $ref: '#/components/schemas/CompteCaisse'
+        ListOfCompteBancaire:
+          type: array
+          items:
+           $ref: '#/components/schemas/CompteBancaire'
+        ListOfCompteMobile:
+          type: array
+          items:
+           $ref: '#/components/schemas/CompteMobile'
     Collectivite:
       type: object
       properties:
@@ -139,6 +161,16 @@ components:
           type: array
           items: 
             $ref: '#/components/schemas/Cotisation'
+        Caisse:
+          $ref: '#/components/schemas/CompteCaisse'
+        ListOfCompteBancaire:
+          type: array
+          items:
+           $ref: '#/components/schemas/CompteBancaire'
+        ListOfCompteMobile:
+          type: array
+          items:
+           $ref: '#/components/schemas/CompteMobile'
     Membre:
       type: object
       properties:
@@ -239,7 +271,57 @@ components:
             - Espece
             - Virement
             - MobileMoney
-    
+    CompteCaisse:
+      type: object
+      properties:
+        id:
+          type: string
+        montant:
+          type: number
+          format: decimal
+    CompteBancaire:
+      type: object
+      properties:
+        id: 
+          type: string
+        banqueName:
+          type: string
+          enum:
+            - BRED
+            - MCB 
+            - BMOI 
+            - BOA
+            - BGFI
+            - AFG
+            - ACCÈS BANQUE
+            - BAOBAB
+            - SIPEM
+        numeroCompte:
+          type: string
+        montant:
+          type: number
+          format: decimal
+    CompteMobile:
+       type: object
+       properties:
+        id:
+          type: string
+        nameTitulaire:
+          type: string
+        numeroTitulaire:
+          type: string
+        nameSevrice:
+          type: string
+          enum:
+            - OrangeMoney
+            - Mvola
+            - AirtelMoney
+        numeroTelephone:
+          type: string
+        montant:
+          type: number
+          format: decimal
+        
         
 
         
