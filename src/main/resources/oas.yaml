@@ -8,6 +8,7 @@ tags:
   - name: Collectivite
   - name: Membre
   - name: Cotisation
+  - name: Compte
 paths:
   /collectivite/new:
     put:
@@ -107,6 +108,53 @@ paths:
               schema:
                 type: string
                 example: the payment has been confirmed
+  /federation/compte:
+   get:
+    tags:
+      - Federation
+      - Compte
+    description: Get the compte information of the federation
+    responses:
+      200:
+        description: compte information
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederationCompte"
+  /collectivite/compte:
+   get:
+    tags:
+      - Collectivite
+      - Compte
+    description: Get the compte information of all collective
+    responses:
+      200:
+        description: compte information
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CollectiviteCompte'
+  /collectivite/{id}/compte:
+   get:
+    tags:
+      - Compte
+      - Collectivite
+    description: Get the compte information of a collective
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      200:
+        description: compte information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectiviteCompte'
 components:
   schemas:
     Federation:
@@ -129,7 +177,10 @@ components:
         ListOfCollectivite:
           type: array
           items: 
-            $ref: '#/components/schemas/Collectivite'
+            $ref: '#/components/schemas/Collectivite' 
+    FederationCompte:
+      type: object
+      properties:
         Caisse:
           $ref: '#/components/schemas/CompteCaisse'
         ListOfCompteBancaire:
@@ -161,6 +212,9 @@ components:
           type: array
           items: 
             $ref: '#/components/schemas/Cotisation'
+    CollectiviteCompte:
+      type: object
+      properties:
         Caisse:
           $ref: '#/components/schemas/CompteCaisse'
         ListOfCompteBancaire:
