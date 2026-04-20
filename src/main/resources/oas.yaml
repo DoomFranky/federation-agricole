@@ -11,7 +11,7 @@ tags:
   - name: Compte
 paths:
   /collectivite/new:
-    put:
+    post:
       tags: 
         - Collectivite
       description: put new collective in the federation
@@ -44,7 +44,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collectivite'
   /membre/add:
-    put:
+    post:
       tags:
         - Membre
       description: add a new membre to the federation
