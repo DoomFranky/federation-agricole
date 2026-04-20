@@ -117,6 +117,25 @@ components:
     Membre:
       type: object
       properties:
+        nom: 
+          type: string
+        prenom:
+          type: string
+        dateDeNaissance:
+          type: string
+        genre:
+          type: string
+          enum:
+            - M
+            - F
+        adresse:
+          type: string
+        metier:
+          type: string
+        telephone:
+          type: string
+        adressseMail:
+          type: string
         dateDAdhesion:
           type: string
         post:
@@ -157,28 +176,10 @@ components:
       properties:
         dateDEncaissement:
           type: string
-    Person:
-      type: object
-      properties:
-        nom: 
-          type: string
-        prenom:
-          type: string
-        dateDeNaissance:
-          type: string
-        genre:
-          type: string
-          enum:
-            - M
-            - F
-        adresse:
-          type: string
-        metier:
-          type: string
-        telephone:
-          type: string
-        adressseMail:
-          type: string
+        montant:
+          type: number
+          format: decimal
+        
         
 
         
