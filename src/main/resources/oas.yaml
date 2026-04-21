@@ -53,14 +53,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AdmissionMembre'
-      parameters:
-        - name: frais
-          in: header
-          description: the ref needed to be add
-          required: true
-          schema:
-            type: string
+              type: object
+              properties:
+                admissionMembre:
+                  $ref: '#/components/schemas/AdmissionMembre'
+                frais:
+                  $ref: '#/components/schemas/Encaisement'
+              
       responses:
         200: 
           description: add the new membre in the federation
@@ -99,7 +98,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Paiment'
+              $ref: '#/components/schemas/Encaisement'
       responses:
         200:
           description: the payment has been confirmed
@@ -373,7 +372,9 @@ components:
       type: object
       properties:
         parrainMembre:
-          $ref: '#/components/schemas/Membre'
+          type: array
+          items:
+            $ref: '#/components/schemas/Membre'
         nom:
           type: string
         prenom:
@@ -423,20 +424,6 @@ components:
            - Espece
            - Virement
            - MobileMoney
-    Paiment:
-      type: object
-      properties:
-        id:
-          type: string
-        montant:
-          type: number
-          format: decimal
-        modeDePaiment:
-          type: string
-          enum:
-            - Espece
-            - Virement
-            - MobileMoney
     CompteCaisse:
       type: object
       properties:
@@ -452,6 +439,10 @@ components:
               solde:
                 type: number
                 format: decimal
+        ListOfEncaissement:
+          type: array
+          items:
+            $ref: '#/components/schemas/Encaisement'
     CompteBancaire:
       type: object
       properties:
@@ -481,6 +472,10 @@ components:
               solde:
                 type: number
                 format: decimal
+        ListOfEncaissement:
+          type: array
+          items:
+            $ref: '#/components/schemas/Encaisement'
     CompteMobile:
        type: object
        properties:
@@ -508,6 +503,10 @@ components:
               solde:
                 type: number
                 format: decimal
+        ListOfEncaissement:
+          type: array
+          items:
+            $ref: '#/components/schemas/Encaisement'
     Activite:
       type: object
       properties:
