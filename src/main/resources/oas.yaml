@@ -157,6 +157,8 @@ paths:
               $ref: '#/components/schemas/CollectiviteCompte'
   /activite:
    get:
+    tags:
+      - Activite
     description: know all the activite of the month
     responses:
       200:
@@ -169,7 +171,33 @@ paths:
                 $ref: '#/components/schemas/Activite'
   /activite/{id}/valide:
     post:
+      tags:
+        - Activite
       description: Valide the participation of a member
+      requestBody:
+        description: Data about the member
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                MemberMissing:
+                  $ref: '#/components/schemas/Membre'
+                Motif:
+                  type: string
+      responses:
+        200:
+          description: valide the participation
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: member {name} is conformt to be missing in the {name} activity
+  /activite/{id}/absence:
+    post:
+      tags:
+        - Activite
+      description: Confirm the absence of a member
       requestBody:
         description: Data about the member
         content:
@@ -183,7 +211,7 @@ paths:
             text/plain:
               schema:
                 type: string
-                example: member {name} is conformt to have participate the {name} activity 
+                example: member {name} is conformt to have participate the {name} activity
 components:
   schemas:
     Federation:
@@ -407,6 +435,8 @@ components:
     Activite:
       type: object
       properties:
+        id:
+          type: integer
         name:
           type: string
         date:
