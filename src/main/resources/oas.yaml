@@ -8,9 +8,10 @@ tags:
   - name: Collectivite
   - name: Membre
   - name: Cotisation
+  - name: Compte
 paths:
   /collectivite/new:
-    put:
+    post:
       tags: 
         - Collectivite
       description: put new collective in the federation
@@ -43,7 +44,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collectivite'
   /membre/add:
-    put:
+    post:
       tags:
         - Membre
       description: add a new membre to the federation
@@ -68,16 +69,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/Membre'
   /cotisation:
+    get:
+      tags:
+        - Cotisation
+      description: get the cotisation
+      responses:
+        200:
+          description: the payment has been confirmed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cotisation'
+                example: the payment has been confirmed
+  /cotisation/{id}/pay:
     put:
       tags:
         - Cotisation
       description: pay the cotisation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
       requestBody:
         description: necessary element to confirm the cotisation
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Cotisation'
+              $ref: '#/components/schemas/Paiment'
       responses:
         200:
           description: the payment has been confirmed
@@ -86,6 +108,145 @@ paths:
               schema:
                 type: string
                 example: the payment has been confirmed
+  /federation/compte:
+   get:
+    tags:
+      - Federation
+      - Compte
+    description: Get the compte information of the federation
+    responses:
+      200:
+        description: compte information
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederationCompte"
+  /collectivite/compte:
+   get:
+    tags:
+      - Collectivite
+      - Compte
+    description: Get the compte information of all collective
+    responses:
+      200:
+        description: compte information
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CollectiviteCompte'
+  /collectivite/{id}/compte:
+   get:
+    tags:
+      - Compte
+      - Collectivite
+    description: Get the compte information of a collective
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      200:
+        description: compte information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectiviteCompte'
+  /activite:
+   get:
+    tags:
+      - Activite
+    description: know all the activite of the month
+    responses:
+      200:
+        description: get all the activite 
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Activite'
+  /activite/{id}/valide:
+    post:
+      tags:
+        - Activite
+      description: Valide the participation of a member
+      requestBody:
+        description: Data about the member
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                MemberMissing:
+                  $ref: '#/components/schemas/Membre'
+                Motif:
+                  type: string
+      parameters:
+        - name: id
+          in: path
+          description: activite identifiant
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: valide the participation
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: member {name} is conformt to be missing in the {name} activity
+  /activite/{id}/absence:
+    post:
+      tags:
+        - Activite
+      description: Confirm the absence of a member
+      requestBody:
+        description: Data about the member
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Membre'
+      parameters:
+        - name: id
+          in: path
+          description: activite identifiant
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: valide the participation
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: member {name} is conformt to have participate the {name} activity
+  /collective/{id}/check_about_it:
+    get:
+      tags:
+        - Collectivite
+        - Compte
+        - Activite
+      description: Check about the taux de participation
+      parameters:
+        - name: id
+          in: path
+          description: collectivity identifiant
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Statistique about a collectivity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tauxDeParticipationParCollectivite  '
 components:
   schemas:
     Federation:
@@ -93,10 +254,35 @@ components:
       properties:
         Dirigant:
           $ref: '#/components/schemas/Membre'
+        ListOfAdjoint:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membre'
+        ListOfTresearer:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membre'
+        ListOfSecretairies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membre'
         ListOfCollectivite:
           type: array
           items: 
-            $ref: '#/components/schemas/Collectivite'
+            $ref: '#/components/schemas/Collectivite' 
+    FederationCompte:
+      type: object
+      properties:
+        Caisse:
+          $ref: '#/components/schemas/CompteCaisse'
+        ListOfCompteBancaire:
+          type: array
+          items:
+           $ref: '#/components/schemas/CompteBancaire'
+        ListOfCompteMobile:
+          type: array
+          items:
+           $ref: '#/components/schemas/CompteMobile'
     Collectivite:
       type: object
       properties:
@@ -108,17 +294,60 @@ components:
           type: string
         dateDeCreation:
           type: string
+          format: date
         localisation:
           type: string
         listOfMembre:
           type: array
           items:
             $ref: '#/components/schemas/Membre'
+        listOfCotisation:
+          type: array
+          items: 
+            $ref: '#/components/schemas/Cotisation'
+        historiqueDePost:
+          $ref: '#/components/schemas/historiqueDePost'
+    CollectiviteCompte:
+      type: object
+      properties:
+        Caisse:
+          $ref: '#/components/schemas/CompteCaisse'
+        ListOfCompteBancaire:
+          type: array
+          items:
+           $ref: '#/components/schemas/CompteBancaire'
+        ListOfCompteMobile:
+          type: array
+          items:
+           $ref: '#/components/schemas/CompteMobile'
     Membre:
       type: object
       properties:
+        nom: 
+          type: string
+        prenom:
+          type: string
+        dateDeNaissance:
+          type: string
+          format: date
+        genre:
+          type: string
+          enum:
+            - M
+            - F
+        adresse:
+          type: string
+        metier:
+          type: string
+        telephone:
+          type: string
+        adressseMail:
+          type: string
         dateDAdhesion:
           type: string
+    Post:
+      type: object
+      properties:
         post:
           type: string
           enum:
@@ -128,6 +357,18 @@ components:
             - Secretaire
             - Membre confirme
             - Membre junior
+    historiqueDePost:
+      type: array
+      items:
+        type: object
+        properties:
+          Role:
+            $ref: '#/components/schemas/Post'
+          member:
+            $ref: '#/components/schemas/Membre'
+          date:
+            type: string
+            format: date
     AdmissionMembre:
       type: object
       properties:
@@ -139,6 +380,7 @@ components:
           type: string
         dateDeNaissance:
           type: string
+          format: date
         genre:
           type: string
           enum:
@@ -155,30 +397,162 @@ components:
     Cotisation:
       type: object
       properties:
-        dateDEncaissement:
+        id:
+          type: integer
+        name:
           type: string
-    Person:
-      type: object
-      properties:
-        nom: 
-          type: string
-        prenom:
-          type: string
-        dateDeNaissance:
-          type: string
-        genre:
+        encaissement:
+          $ref: '#/components/schemas/Encaisement'
+        periodisite:
           type: string
           enum:
-            - M
-            - F
-        adresse:
+            - Mensuelle
+            - Annuelle
+            - Ponctuelle
+    Encaisement:
+      type: object
+      properties:
+        dateDEncaissement:
           type: string
-        metier:
+        montant:
+          type: number
+          format: decimal
+        modeDePaiment:
           type: string
-        telephone:
+          enum: 
+           - Espece
+           - Virement
+           - MobileMoney
+    Paiment:
+      type: object
+      properties:
+        id:
           type: string
-        adressseMail:
+        montant:
+          type: number
+          format: decimal
+        modeDePaiment:
           type: string
+          enum:
+            - Espece
+            - Virement
+            - MobileMoney
+    CompteCaisse:
+      type: object
+      properties:
+        id:
+          type: string
+        montant:
+          type: array
+          items:
+            properties:
+              date:
+                type: string
+                format: date-time
+              solde:
+                type: number
+                format: decimal
+    CompteBancaire:
+      type: object
+      properties:
+        id: 
+          type: string
+        banqueName:
+          type: string
+          enum:
+            - BRED
+            - MCB 
+            - BMOI 
+            - BOA
+            - BGFI
+            - AFG
+            - ACCÈS BANQUE
+            - BAOBAB
+            - SIPEM
+        numeroCompte:
+          type: string
+        montant:
+          type: array
+          items:
+            properties:
+              date:
+                type: string
+                format: date-time
+              solde:
+                type: number
+                format: decimal
+    CompteMobile:
+       type: object
+       properties:
+        id:
+          type: string
+        nameTitulaire:
+          type: string
+        numeroTitulaire:
+          type: string
+        nameSevrice:
+          type: string
+          enum:
+            - OrangeMoney
+            - Mvola
+            - AirtelMoney
+        numeroTelephone:
+          type: string
+        montant:
+          type: array
+          items:
+            properties:
+              date:
+                type: string
+                format: date-time
+              solde:
+                type: number
+                format: decimal
+    Activite:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        date:
+          type: string
+        perioditite:
+          $ref: '#/components/schemas/Perioditite'
+        ListOfMember:
+          type: array
+          items:
+            $ref: '#/components/schemas/MembreValide'
+    Perioditite:
+      type: object
+      properties:
+        intervalle:
+          type: string
+          enum:
+            - Semaine
+            - Mois
+        numberDIntervalle:
+          type: integer
+    MembreValide:
+      type: object
+      properties:
+        aParticiper:
+          type: boolean
+        membre:
+          $ref: "#/components/schemas/Membre"
+    tauxDeParticipationParCollectivite:
+      type: object
+      properties:
+        tauxDAssidutite:
+          type: number
+          format: decimal
+        montantEncaissement:
+          type: number
+          format: decimal
+        montantImpaye:
+          type: number
+          format: decimal
+        
         
 
         
