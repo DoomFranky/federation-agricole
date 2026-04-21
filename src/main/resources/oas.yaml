@@ -185,6 +185,13 @@ paths:
                   $ref: '#/components/schemas/Membre'
                 Motif:
                   type: string
+      parameters:
+        - name: id
+          in: path
+          description: activite identifiant
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: valide the participation
@@ -204,6 +211,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Membre'
+      parameters:
+        - name: id
+          in: path
+          description: activite identifiant
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: valide the participation
@@ -212,6 +226,27 @@ paths:
               schema:
                 type: string
                 example: member {name} is conformt to have participate the {name} activity
+  /collective/{id}/check_about_it:
+    get:
+      tags:
+        - Collectivite
+        - Compte
+        - Activite
+      description: Check about the taux de participation
+      parameters:
+        - name: id
+          in: path
+          description: collectivity identifiant
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Statistique about a collectivity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tauxDeParticipation'
 components:
   schemas:
     Federation:
@@ -464,6 +499,19 @@ components:
           type: boolean
         membre:
           $ref: "#/components/schemas/Membre"
+    tauxDeParticipation:
+      type: object
+      properties:
+        tauxDAssidutite:
+          type: number
+          format: decimal
+        montantEncaissement:
+          type: number
+          format: decimal
+        montantImpaye:
+          type: number
+          format: decimal
+        
         
 
         
