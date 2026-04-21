@@ -20,29 +20,15 @@ paths:
         content:
           application/json:
             schema:
-              type: array 
-              items: 
-                $ref: '#/components/schemas/Membre'
-      parameters:
-        - name: autorisation
-          in: header
-          description: authorization from the federation
-          required: true
-          schema:
-            type: string
-        - name: localisation
-          in: header
-          description: location of the new collectivite
-          required: true
-          schema:
-            type: string
+              $ref: "#/components/schemas/PostCollectivite"
       responses:
-        200:
+        201:
           description: collective created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collectivite'
+
   /membre/add:
     post:
       tags:
@@ -226,7 +212,7 @@ paths:
               schema:
                 type: string
                 example: member {name} is conformt to have participate the {name} activity
-  /collective/{id}/check_about_it:
+  /collective/{id}/info:
     get:
       tags:
         - Collectivite
@@ -246,7 +232,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/tauxDeParticipationParCollectivite  '
+                $ref: '#/components/schemas/tauxDeParticipationParCollectivite'
+
+  /federation/stats:
+    get:
+      tags:
+        - Collectivite
+        - Activite
+      description: Check stats of Collectivite on a period
+      parameters:
+        - name: from
+          in: query
+          description: period start
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: period end
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Statistique about a collectivity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/tauxDeParticipationParCollectivite'
 components:
   schemas:
     Federation:
@@ -320,6 +337,18 @@ components:
           type: array
           items:
            $ref: '#/components/schemas/CompteMobile'
+    PostCollectivite:
+      type: object
+      properties:
+        autorisation:
+          type: string
+        localisation:
+          type: string
+        membres:
+          type: array
+          items:
+            $ref: "#/components/schemas/Membre"
+
     Membre:
       type: object
       properties:
@@ -540,9 +569,14 @@ components:
           type: boolean
         membre:
           $ref: "#/components/schemas/Membre"
+        dateDeParticipation:
+          type: string
+          format: date
     tauxDeParticipationParCollectivite:
       type: object
       properties:
+        nomCollectivite:
+          type: string
         tauxDAssidutite:
           type: number
           format: decimal
