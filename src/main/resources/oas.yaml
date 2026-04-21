@@ -397,13 +397,20 @@ components:
           date:
             type: string
             format: date
+    Parrain:
+      type: object
+      properties:
+        parrainMembre:
+          $ref: '#/components/schemas/Membre'
+        relation:
+          type: string
     AdmissionMembre:
       type: object
       properties:
         parrainMembre:
           type: array
           items:
-            $ref: '#/components/schemas/Membre'
+            $ref: '#/components/schemas/Parrain'
         nom:
           type: string
         prenom:
