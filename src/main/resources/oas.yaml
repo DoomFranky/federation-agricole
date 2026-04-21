@@ -398,12 +398,11 @@ components:
             type: string
             format: date
     Parrain:
-      type: object
       properties:
-        parrainMembre:
-          $ref: '#/components/schemas/Membre'
         relation:
           type: string
+      allOf:
+        - $ref: "#/components/schemas/Membre"
     AdmissionMembre:
       type: object
       properties:
