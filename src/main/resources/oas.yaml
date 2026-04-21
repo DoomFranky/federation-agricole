@@ -155,6 +155,35 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CollectiviteCompte'
+  /activite:
+   get:
+    description: know all the activite of the month
+    responses:
+      200:
+        description: get all the activite 
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Activite'
+  /activite/{id}/valide:
+    post:
+      description: Valide the participation of a member
+      requestBody:
+        description: Data about the member
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Membre'
+      responses:
+        200:
+          description: valide the participation
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: member {name} is conformt to have participate the {name} activity 
 components:
   schemas:
     Federation:
@@ -375,7 +404,36 @@ components:
         montant:
           type: number
           format: decimal
-        
+    Activite:
+      type: object
+      properties:
+        name:
+          type: string
+        date:
+          type: string
+        perioditite:
+          $ref: '#/components/schemas/Perioditite'
+        ListOfMember:
+          type: array
+          items:
+            $ref: '#/components/schemas/MembreValide'
+    Perioditite:
+      type: object
+      properties:
+        intervalle:
+          type: string
+          enum:
+            - Semaine
+            - Mois
+        numberDIntervalle:
+          type: integer
+    MembreValide:
+      type: object
+      properties:
+        aParticiper:
+          type: boolean
+        membre:
+          $ref: "#/components/schemas/Membre"
         
 
         
