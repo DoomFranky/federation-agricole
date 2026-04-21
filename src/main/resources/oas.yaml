@@ -305,6 +305,8 @@ components:
           type: array
           items: 
             $ref: '#/components/schemas/Cotisation'
+        historiqueDePost:
+          $ref: '#/components/schemas/historiqueDePost'
     CollectiviteCompte:
       type: object
       properties:
@@ -343,6 +345,9 @@ components:
           type: string
         dateDAdhesion:
           type: string
+    Post:
+      type: object
+      properties:
         post:
           type: string
           enum:
@@ -352,6 +357,18 @@ components:
             - Secretaire
             - Membre confirme
             - Membre junior
+    historiqueDePost:
+      type: array
+      items:
+        type: object
+        properties:
+          Role:
+            $ref: '#/components/schemas/Post'
+          member:
+            $ref: '#/components/schemas/Membre'
+          date:
+            type: string
+            format: date
     AdmissionMembre:
       type: object
       properties:
