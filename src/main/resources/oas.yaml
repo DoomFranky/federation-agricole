@@ -246,7 +246,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/tauxDeParticipation'
+                $ref: '#/components/schemas/tauxDeParticipationParCollectivite  '
 components:
   schemas:
     Federation:
@@ -294,6 +294,7 @@ components:
           type: string
         dateDeCreation:
           type: string
+          format: date
         localisation:
           type: string
         listOfMembre:
@@ -326,6 +327,7 @@ components:
           type: string
         dateDeNaissance:
           type: string
+          format: date
         genre:
           type: string
           enum:
@@ -361,6 +363,7 @@ components:
           type: string
         dateDeNaissance:
           type: string
+          format: date
         genre:
           type: string
           enum:
@@ -423,8 +426,15 @@ components:
         id:
           type: string
         montant:
-          type: number
-          format: decimal
+          type: array
+          items:
+            properties:
+              date:
+                type: string
+                format: date-time
+              solde:
+                type: number
+                format: decimal
     CompteBancaire:
       type: object
       properties:
@@ -445,8 +455,15 @@ components:
         numeroCompte:
           type: string
         montant:
-          type: number
-          format: decimal
+          type: array
+          items:
+            properties:
+              date:
+                type: string
+                format: date-time
+              solde:
+                type: number
+                format: decimal
     CompteMobile:
        type: object
        properties:
@@ -465,8 +482,15 @@ components:
         numeroTelephone:
           type: string
         montant:
-          type: number
-          format: decimal
+          type: array
+          items:
+            properties:
+              date:
+                type: string
+                format: date-time
+              solde:
+                type: number
+                format: decimal
     Activite:
       type: object
       properties:
@@ -499,7 +523,7 @@ components:
           type: boolean
         membre:
           $ref: "#/components/schemas/Membre"
-    tauxDeParticipation:
+    tauxDeParticipationParCollectivite:
       type: object
       properties:
         tauxDAssidutite:
