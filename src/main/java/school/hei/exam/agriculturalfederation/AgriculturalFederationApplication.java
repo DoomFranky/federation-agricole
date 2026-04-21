@@ -1,13 +1,13 @@
-package edu.school.hei.federationagricole;
+package school.hei.exam.agriculturalfederation;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class FederationAgricoleApplication {
+public class AgriculturalFederationApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(FederationAgricoleApplication.class, args);
+        SpringApplication.run(AgriculturalFederationApplication.class, args);
     }
 
 }
