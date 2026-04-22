@@ -16,7 +16,6 @@ public class Member {
     private OccupationEnum occupation;
     private List<Reference> referees;
     
-    
     public Member(String id, String firstName, String lastName, LocalDate birthday, GenderEnum gender, String address,
             String profession, String phoneNumber, String email, OccupationEnum occupation, List<Reference> referees) {
         this.id = id;

@@ -1,6 +1,5 @@
 package school.hei.exam.agriculturalfederation.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,19 +21,19 @@ public class MemberController {
     MemberService memberService;
     
     public MemberController(MemberService memberService){
-        this.memberService = memberService;
+        this.memberService = memberService; 
     }
 
     @PostMapping("/members")
     public ResponseEntity<?> postMembers (@RequestBody List<MemberInscription> memberInscription) {
         try {
-            List<Member> listOfMember = new ArrayList<>();
+            List<Member> listOfMember = memberService.createMembers(memberInscription);
             return ResponseEntity.status(HttpStatus.OK)
                 .body(listOfMember.stream().map(member->new MemberRest(
                     member.getFirstName(),member.getLastName(),member.getBirthday(),member.getGender(),
                     member.getAddress(),member.getProfession(),member.getPhoneNumber(),
                     member.getEmail(),member.getOccupation(),member.getId(),
-                    member.getReferees().stream().map(m->m.getReferencer().getFirstName()).collect(Collectors.toList())
+                    member.getReferees().stream().map(m->m.getReferee().getFirstName()).collect(Collectors.toList()) 
                 )).collect(Collectors.toList()));
         } catch (BadRequestException e){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
