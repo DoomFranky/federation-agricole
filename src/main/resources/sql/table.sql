@@ -84,9 +84,8 @@ CREATE TABLE collectivity (
                               name                TEXT,
                               location            TEXT NOT NULL,                 -- city / locality
                               agricultural_specialty TEXT,
-                              federation_approval BOOLEAN NOT NULL DEFAULT FALSE,
                               created_at          DATE NOT NULL DEFAULT CURRENT_DATE,
-                              federation_id       UUID NOT NULL REFERENCES federation(id)
+                              federation_id       INTEGER NOT NULL REFERENCES federation(id)
 );
 
 -- ---------------------------------------------------------------------------
@@ -120,16 +119,14 @@ CREATE TABLE collectivity_membership (
                                          joined_at           DATE NOT NULL DEFAULT CURRENT_DATE,
                                          left_at             DATE,                          -- NULL = still active
                                          resignation         BOOLEAN NOT NULL DEFAULT FALSE,
-                                         registration_fee_paid   BOOLEAN NOT NULL DEFAULT FALSE,
-                                         membership_dues_paid    BOOLEAN NOT NULL DEFAULT FALSE,
                                          CONSTRAINT no_overlap CHECK (left_at IS NULL OR left_at > joined_at)
 );
 
 -- Unique active membership per member (only one NULL left_at per member)
-CREATE UNIQUE INDEX uq_active_membership
-    ON collectivity_membership (member_id)
-    WHERE left_at IS NULL;
-
+-- CREATE UNIQUE INDEX uq_active_membership
+--     ON collectivity_membership (member_id)
+--     WHERE left_at IS NULL;
+--
 -- ---------------------------------------------------------------------------
 -- B-2 : REFEREES / SPONSORS
 -- A new applicant must be sponsored by ≥2 confirmed members.
@@ -160,7 +157,7 @@ CREATE TABLE collectivity_mandate (
                                       member_id       UUID NOT NULL REFERENCES member(id),
                                       occupation      member_occupation NOT NULL
                                           CHECK (occupation IN ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY')),
-                                      year            SMALLINT NOT NULL CHECK (year > 2000),
+                                      date            DATE NOT NULL DEFAULT CURRENT_DATE,
 
                                       UNIQUE (collectivity_id, occupation, year)        -- one holder per role per year
 );
