@@ -25,12 +25,17 @@ public class MemberController {
         this.memberService = memberService;
     }
 
-    @PostMapping
+    @PostMapping("/members")
     public ResponseEntity<?> postMembers (@RequestBody List<MemberInscription> memberInscription) {
         try {
             List<Member> listOfMember = new ArrayList<>();
             return ResponseEntity.status(HttpStatus.OK)
-            .body(listOfMember.stream().map(m->new MemberRest()).collect(Collectors.toList()));
+                .body(listOfMember.stream().map(member->new MemberRest(
+                    member.getFirstName(),member.getLastName(),member.getBirthday(),member.getGender(),
+                    member.getAddress(),member.getProfession(),member.getPhoneNumber(),
+                    member.getEmail(),member.getOccupation(),member.getId(),
+                    member.getReferees().stream().map(m->m.getReferencer().getFirstName()).collect(Collectors.toList())
+                )).collect(Collectors.toList()));
         } catch (BadRequestException e){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
