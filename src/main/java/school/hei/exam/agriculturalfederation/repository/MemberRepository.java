@@ -56,7 +56,7 @@ public class MemberRepository {
                 "VALUES (?, ?, ?, ?, ?, ?)"
             );
             for (MemberInscription memberInscription : membersInscription) {
-                name.add(new Name(memberInscription.getFirstName(),memberInscription.getLastName()));
+                name.add(new Name(memberInscription.getFirstName(), memberInscription.getLastName()));
                 preparedStatement.setString(1, memberInscription.getFirstName());
                 preparedStatement.setString(2, memberInscription.getLastName());
                 preparedStatement.setDate(3, Date.valueOf(memberInscription.getBirthday()));
@@ -73,39 +73,25 @@ public class MemberRepository {
         }
     }
 
-    private class Name {
-        private String firstName;
-        private String lastName;
-        
-        public Name(String firstName, String lastName) {
-            this.firstName = firstName;
-            this.lastName = lastName;
-        }
-        public String getFirstName() {
-            return firstName;
-        }
-        public String getLastName() {
-            return lastName;
-        }
-        
-        
+    private record Name(String firstName, String lastName) {
     }
-    public List<Integer> getIdByName (List<Name> name){
+
+    public List<String> getIdByName (List<Name> name){
         try {
-            List<Integer> listOfids = new ArrayList<>();
+            List<String> listOfId = new ArrayList<>();
             PreparedStatement preparedStatement = connection.prepareStatement(
                 "SELECT id FROM member WHERE first_name = ? AND last_name = ? "
             );
             for (Name nameToGet : name) {
-                preparedStatement.setString(1, nameToGet.getFirstName());
-                preparedStatement.setString(2,nameToGet.getLastName());
+                preparedStatement.setString(1, nameToGet.firstName());
+                preparedStatement.setString(2,nameToGet.lastName());
             }
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                listOfids.add(resultSet.getInt("id"));
+                listOfId.add(resultSet.getString("id"));
             }
 
-            return listOfids;
+            return listOfId;
         } catch (Exception e) {
             throw new RuntimeException();
         }

@@ -1,4 +1,4 @@
-\c federation_agricole_db
+\c agricultural_federation_db
 
 -- CREATE EXTENSION IF NOT EXISTS "pgcrypto";   -- gen_random_uuid()
 
@@ -159,12 +159,12 @@ CREATE TABLE collectivity_mandate (
                                           CHECK (occupation IN ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY')),
                                       date            DATE NOT NULL DEFAULT CURRENT_DATE,
 
-                                      UNIQUE (collectivity_id, occupation, year)        -- one holder per role per year
+                                      UNIQUE (collectivity_id, occupation, date)        -- one holder per role per year
 );
 
 -- Enforce the max 2 mandates per (member, collectivity, occupation) rule via constraint
 CREATE UNIQUE INDEX uq_mandate_count
-    ON collectivity_mandate (collectivity_id, member_id, occupation, year);
+    ON collectivity_mandate (collectivity_id, member_id, occupation, date);
 
 -- (The "≤2 mandates" business rule is enforced in application logic / trigger)
 
