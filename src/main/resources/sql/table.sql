@@ -69,7 +69,7 @@ CREATE TYPE activity_type AS ENUM (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE federation (
-                            id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                            id             INTEGER PRIMARY KEY,
                             name            TEXT NOT NULL,
                             created_at      DATE NOT NULL DEFAULT CURRENT_DATE
 );
@@ -80,10 +80,10 @@ CREATE TABLE federation (
 
 CREATE TABLE collectivity (
                               id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                              number              SERIAL UNIQUE NOT NULL,        -- human-readable unique number
-                              name                TEXT NOT NULL UNIQUE,
+                              number              INTEGER,        -- human-readable unique number
+                              name                TEXT,
                               location            TEXT NOT NULL,                 -- city / locality
-                              agricultural_specialty TEXT NOT NULL,
+                              agricultural_specialty TEXT,
                               federation_approval BOOLEAN NOT NULL DEFAULT FALSE,
                               created_at          DATE NOT NULL DEFAULT CURRENT_DATE,
                               federation_id       UUID NOT NULL REFERENCES federation(id)
