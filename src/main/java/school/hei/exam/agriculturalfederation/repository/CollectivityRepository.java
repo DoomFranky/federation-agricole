@@ -83,7 +83,40 @@ public class CollectivityRepository {
             }
             throw new RuntimeException(e);
         }
-        return result;
+        return collectivityList;
+    }
+
+    public Collectivity findById(String id) {
+        String sql = "SELECT id, number, name, location, agricultural_speciality FROM collectivity WHERE id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Collectivity.builder()
+                            .id(rs.getString("id"))
+                            .number(rs.getInt("number"))
+                            .name(rs.getString("name"))
+                            .specialization(rs.getString("agricultural_speciality"))
+                            .location(rs.getString("location"))
+                            .build();
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public void updateIdentity(String id, Integer number, String name) {
+        String sql = "UPDATE collectivity SET number = ?, name = ? WHERE id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setObject(1, number);
+            ps.setString(2, name);
+            ps.setString(3, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void linkMemberToCollectivity(Collectivity collectivity, List<Member> members) {
@@ -94,11 +127,14 @@ public class CollectivityRepository {
                         """;
         try (PreparedStatement ps = connection.prepareStatement(sqlLinkMemberToCollectivity)) {
             connection.setAutoCommit(false);
-            for (Member member : members) {
-                ps.setString(1, member.getId());
-                ps.setString(2, collectivity.getId());
-                ps.setObject(3, member.getOccupation());
-                ps.addBatch();
+            if (members != null) {
+                for (Member member : members) {
+                    if (member == null) continue;
+                    ps.setString(1, member.getId());
+                    ps.setString(2, collectivity.getId());
+                    ps.setObject(3, member.getOccupation());
+                    ps.addBatch();
+                }
             }
             ps.executeBatch();
             connection.commit();
@@ -124,22 +160,20 @@ public class CollectivityRepository {
                 field.setAccessible(true);
                 String post = field.getName();
                 Member member = (Member) field.get(structure);
+                if (member == null) continue;
                 if (post.equals("president")) {
                     ps.setString(1, member.getId());
                     ps.setString(2, collectivity.getId());
                     ps.setString(3, OccupationEnum.PRESIDENT.name());
-                }
-                if (post.equals("vicePresident")) {
+                } else if (post.equals("vicePresident")) {
                     ps.setString(1, member.getId());
                     ps.setString(2, collectivity.getId());
                     ps.setString(3, OccupationEnum.VICE_PRESIDENT.name());
-                }
-                if (post.equals("secretary")) {
+                } else if (post.equals("secretary")) {
                     ps.setString(1, member.getId());
                     ps.setString(2, collectivity.getId());
                     ps.setString(3, OccupationEnum.SECRETARY.name());
-                }
-                if (post.equals("treasurer")) {
+                } else if (post.equals("treasurer")) {
                     ps.setString(1, member.getId());
                     ps.setString(2, collectivity.getId());
                     ps.setString(3, OccupationEnum.TREASURER.name());

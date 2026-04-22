@@ -35,6 +35,31 @@ paths:
           description: Collectivity without federation approval or structure missing.
         404:
           description: Member not found.
+  '/collectivities/{id}':
+    put:
+      summary: Attribute a number and name to a collectivity
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentifyCollectivity'
+      responses:
+        200:
+          description: Successfully updated collectivity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collectivity'
+        400:
+          description: Collectivity already has a number or name, or invalid input.
+        404:
+          description: Collectivity not found.
   '/members':
     post:
       summary: Create list of members
@@ -176,3 +201,10 @@ components:
         - TREASURER
         - VICE_PRESIDENT
         - PRESIDENT
+    IdentifyCollectivity:
+      type: object
+      properties:
+        number:
+          type: integer
+        name:
+          type: string

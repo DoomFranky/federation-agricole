@@ -22,13 +22,20 @@ public class MemberRepository {
         this.connection = connection;
     }
 
-    public List<Member> findMembersById (List<String> ids){
+    public List<Member> findMembersById(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
         try {
             List<Member> members = new ArrayList<>();
+            String placeholders = String.join(",", ids.stream().map(id -> "?").toList());
             PreparedStatement preparedStatement = connection.prepareStatement(
                 "SELECT id, last_name, first_name, birth_date, gender, address, "+
-                "job, phone, email, join_date, poste FROM membre"
+                "profession, phone, email, join_date, poste FROM member WHERE id IN (" + placeholders + ")"
             );
+            for (int i = 0; i < ids.size(); i++) {
+                preparedStatement.setString(i + 1, ids.get(i));
+            }
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 Member member = new Member();
@@ -40,6 +47,7 @@ public class MemberRepository {
                 member.setEmail(resultSet.getString("email"));
                 member.setOccupation(OccupationEnum.JUNIOR);
                 member.setPhoneNumber(resultSet.getString("phone"));
+                members.add(member);
             }
             return members;
         } catch (Exception e) {
