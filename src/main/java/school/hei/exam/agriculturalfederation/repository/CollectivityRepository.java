@@ -6,8 +6,8 @@ import school.hei.exam.agriculturalfederation.entity.CollectivityStructure;
 import school.hei.exam.agriculturalfederation.entity.Member;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
 
-import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,86 +18,21 @@ import java.util.UUID;
 @Repository
 public class CollectivityRepository {
     private final Connection connection;
+    private final MemberRepository memberRepository;
 
-    public CollectivityRepository(Connection connection) {
+    public CollectivityRepository(Connection connection, MemberRepository memberRepository) {
         this.connection = connection;
-    }
-
-    //=========================================================================================================
-
-    public List<Collectivity> findCollectivities() {
-        List<Collectivity> result = new ArrayList<>();
-        String sql =
-                """
-                        SELECT (id, number, name, location, agricultural_specialty) FROM collectivity
-                 """;
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Collectivity collectivity = Collectivity.builder()
-                            .id(rs.getString("id"))
-                            .number(rs.getInt("number"))
-                            .name(rs.getString("name"))
-                            .specialization(rs.getString("agricultural_specialty"))
-                            .build();
-                    result.add(collectivity);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return result;
-    }
-
-    //=========================================================================================================
-
-    public List<Collectivity> saveCollectivity(List<Collectivity> collectivityList) {
-        String sqlInsertCollectivity =
-                """
-                        INSERT INTO collectivity (location, federation_id, id)
-                        VALUES (?, (SELECT (id) FROM federation LIMIT 1), ?::uuid);
-                        """;
-
-        try (PreparedStatement ps = connection.prepareStatement(sqlInsertCollectivity)) {
-            connection.setAutoCommit(false);
-                String collectivityId;
-            for (Collectivity collectivity : collectivityList) {
-                collectivityId = UUID.randomUUID().toString();
-                collectivity.setId(collectivityId);
-                ps.setString(1, collectivity.getLocation());
-                ps.setString(2, collectivityId);
-                ps.addBatch();
-            }
-            ps.executeBatch();
-            connection.commit();
-            for (Collectivity collectivity : collectivityList){
-                linkMemberToCollectivity(collectivity, collectivity.getMemberList());
-                linkStructureToCollectivity(collectivity, collectivity.getStructure());
-            }
-        } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
-            throw new RuntimeException(e);
-        }
-        return collectivityList;
+        this.memberRepository = memberRepository;
     }
 
     public Collectivity findById(String id) {
-        String sql = "SELECT id, number, name, location, agricultural_specialty FROM collectivity WHERE id = ?::uuid";
+        String sql = "SELECT id, number, name, location, agricultural_specialty, created_at " +
+                   "FROM collectivity WHERE id = ?::uuid";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return Collectivity.builder()
-                            .id(rs.getString("id"))
-                            .number(rs.getInt("number"))
-                            .name(rs.getString("name"))
-                            .specialization(rs.getString("agricultural_specialty"))
-                            .location(rs.getString("location"))
-                            .build();
+                    return mapResultSetToCollectivity(rs);
                 }
             }
         } catch (SQLException e) {
@@ -106,95 +41,172 @@ public class CollectivityRepository {
         return null;
     }
 
+    public Collectivity findByNumber(Integer number) {
+        String sql = "SELECT id, number, name, location, agricultural_specialty, created_at " +
+                   "FROM collectivity WHERE number = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, number);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToCollectivity(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public Collectivity findByName(String name) {
+        String sql = "SELECT id, number, name, location, agricultural_specialty, created_at " +
+                   "FROM collectivity WHERE name = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, name);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToCollectivity(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public Collectivity findByLocationAndSpecialty(String location, String specialty) {
+        String sql = "SELECT id, number, name, location, agricultural_specialty, created_at " +
+                   "FROM collectivity WHERE location = ? AND agricultural_specialty = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, location);
+            ps.setString(2, specialty);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToCollectivity(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public List<Collectivity> findAll() {
+        List<Collectivity> collectivities = new ArrayList<>();
+        String sql = "SELECT id, number, name, location, agricultural_specialty, created_at FROM collectivity";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    collectivities.add(mapResultSetToCollectivity(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return collectivities;
+    }
+
+    public Collectivity create(Collectivity collectivity) {
+        String sql = "INSERT INTO collectivity (id, location, agricultural_specialty, federation_id) " +
+                     "VALUES (?::uuid, ?, ?, (SELECT id FROM federation LIMIT 1)) RETURNING id";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            String id = UUID.randomUUID().toString();
+            collectivity.setId(id);
+            ps.setString(1, id);
+            ps.setString(2, collectivity.getLocation());
+            ps.setString(3, collectivity.getAgriculturalSpecialty());
+            ps.executeUpdate();
+            return collectivity;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void updateIdentity(String id, Integer number, String name) {
         String sql = "UPDATE collectivity SET number = ?, name = ? WHERE id = ?::uuid";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setObject(1, number);
             ps.setString(2, name);
             ps.setString(3, id);
-            ps.executeUpdate();
+            int updated = ps.executeUpdate();
+            if (updated == 0) {
+                throw new RuntimeException("Collectivity not found");
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void linkMemberToCollectivity(Collectivity collectivity, List<Member> members) {
-        String sqlLinkMemberToCollectivity =
-                """
-                        INSERT INTO collectivity_membership (member_id, collectivity_id, occupation)
-                        VALUES (?::uuid, ?::uuid, ?::member_occupation)
-                        """;
-        try (PreparedStatement ps = connection.prepareStatement(sqlLinkMemberToCollectivity)) {
-            connection.setAutoCommit(false);
-            if (members != null) {
-                for (Member member : members) {
-                    if (member == null) continue;
-                    ps.setString(1, member.getId());
-                    ps.setString(2, collectivity.getId());
-                    ps.setString(3, member.getOccupation().name());
-                    ps.addBatch();
+    public int countActiveMembers(String collectivityId) {
+        String sql = "SELECT COUNT(*) FROM collectivity_membership WHERE collectivity_id = ?::uuid AND left_at IS NULL";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, collectivityId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
                 }
             }
-            ps.executeBatch();
-            connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
             throw new RuntimeException(e);
         }
+        return 0;
     }
 
-    private void linkStructureToCollectivity(Collectivity collectivity, CollectivityStructure structure) {
-        String sqlLinkStructToCol =
-                """
-                        INSERT INTO collectivity_mandate (member_id, collectivity_id, occupation)
-                        VALUES (?::uuid, ?::uuid, ?::member_occupation)
-                        """;
-        try (PreparedStatement ps = connection.prepareStatement(sqlLinkStructToCol)) {
-            connection.setAutoCommit(false);
-            for (Field field : structure.getClass().getDeclaredFields()) {
-                field.setAccessible(true);
-                String post = field.getName();
-                Member member = (Member) field.get(structure);
-                if (member == null) continue;
-                switch (post) {
-                    case "president" -> {
-                        ps.setString(1, member.getId());
-                        ps.setString(2, collectivity.getId());
-                        ps.setString(3, OccupationEnum.PRESIDENT.name());
-                    }
-                    case "vicePresident" -> {
-                        ps.setString(1, member.getId());
-                        ps.setString(2, collectivity.getId());
-                        ps.setString(3, OccupationEnum.VICE_PRESIDENT.name());
-                    }
-                    case "secretary" -> {
-                        ps.setString(1, member.getId());
-                        ps.setString(2, collectivity.getId());
-                        ps.setString(3, OccupationEnum.SECRETARY.name());
-                    }
-                    case "treasurer" -> {
-                        ps.setString(1, member.getId());
-                        ps.setString(2, collectivity.getId());
-                        ps.setString(3, OccupationEnum.TREASURER.name());
-                    }
+    public int countMembersWithMinTenure(String collectivityId, int daysMinTenure) {
+        String sql = "SELECT COUNT(*) FROM collectivity_membership " +
+                  "WHERE collectivity_id = ?::uuid " +
+                  "AND joined_at <= CURRENT_DATE - INTERVAL '1 day' * ? " +
+                  "AND left_at IS NULL";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, collectivityId);
+            ps.setInt(2, daysMinTenure);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
                 }
-                ps.addBatch();
             }
-            ps.executeBatch();
-            connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        return 0;
+    }
+
+    public CollectivityStructure getStructure(String collectivityId) {
+        CollectivityStructure structure = new CollectivityStructure();
+        String sql = "SELECT cm.member_id, cm.occupation " +
+                  "FROM collectivity_mandate cm " +
+                  "WHERE cm.collectivity_id = ?::uuid " +
+                  "ORDER BY cm.date DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, collectivityId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String memberId = rs.getString("member_id");
+                    String occupation = rs.getString("occupation");
+                    Member member = memberRepository.findById(memberId);
+                    if (member != null) {
+                        switch (occupation) {
+                            case "PRESIDENT" -> structure.setPresident(member);
+                            case "VICE_PRESIDENT" -> structure.setVicePresident(member);
+                            case "SECRETARY" -> structure.setSecretary(member);
+                            case "TREASURER" -> structure.setTreasurer(member);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return structure;
+    }
+
+    private Collectivity mapResultSetToCollectivity(ResultSet rs) throws SQLException {
+        Collectivity collectivity = new Collectivity();
+        collectivity.setId(rs.getString("id"));
+        collectivity.setNumber(rs.getObject("number") != null ? rs.getInt("number") : null);
+        collectivity.setName(rs.getString("name"));
+        collectivity.setLocation(rs.getString("location"));
+        collectivity.setAgriculturalSpecialty(rs.getString("agricultural_specialty"));
+        collectivity.setCreatedAt(rs.getDate("created_at") != null ? rs.getDate("created_at").toLocalDate() : null);
+        return collectivity;
     }
 }
