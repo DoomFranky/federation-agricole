@@ -55,7 +55,7 @@ public class CollectivityRepository {
         String sqlInsertCollectivity =
                 """
                         INSERT INTO collectivity (location, federation_id, id)
-                        VALUES (?, (SELECT (id) FROM federation LIMIT 1), ?);
+                        VALUES (?, (SELECT (id) FROM federation LIMIT 1), ?::uuid);
                         """;
 
         try (PreparedStatement ps = connection.prepareStatement(sqlInsertCollectivity)) {
@@ -122,7 +122,7 @@ public class CollectivityRepository {
         String sqlLinkMemberToCollectivity =
                 """
                         INSERT INTO collectivity_membership (member_id, collectivity_id, occupation)
-                        VALUES (?, ?, ?::member_occupation)
+                        VALUES (?::uuid, ?::uuid, ?::member_occupation)
                         """;
         try (PreparedStatement ps = connection.prepareStatement(sqlLinkMemberToCollectivity)) {
             connection.setAutoCommit(false);
@@ -131,7 +131,7 @@ public class CollectivityRepository {
                     if (member == null) continue;
                     ps.setString(1, member.getId());
                     ps.setString(2, collectivity.getId());
-                    ps.setObject(3, member.getOccupation());
+                    ps.setString(3, member.getOccupation().name());
                     ps.addBatch();
                 }
             }
@@ -151,7 +151,7 @@ public class CollectivityRepository {
         String sqlLinkStructToCol =
                 """
                         INSERT INTO collectivity_mandate (member_id, collectivity_id, occupation)
-                        VALUES (?, ?, ?::member_occupation)
+                        VALUES (?::uuid, ?::uuid, ?::member_occupation)
                         """;
         try (PreparedStatement ps = connection.prepareStatement(sqlLinkStructToCol)) {
             connection.setAutoCommit(false);

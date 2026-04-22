@@ -28,11 +28,13 @@ public class MemberRepository {
         }
         try {
             List<Member> members = new ArrayList<>();
-            String placeholders = String.join(",", ids.stream().map(id -> "?").toList());
-            PreparedStatement preparedStatement = connection.prepareStatement(
-                "SELECT id, last_name, first_name, birth_date, gender, address, "+
-                "profession, phone, email, join_date, poste FROM member WHERE id IN (" + placeholders + ")"
-            );
+            String placeholder = String.join(",",ids.stream().map(id -> "?::uuid").toList());
+            String sql =
+                    """
+                    SELECT id, last_name, first_name, birth_date, gender, address, profession, phone_number, email
+                    FROM member WHERE id IN (%s)
+                    """.formatted(placeholder);
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
             for (int i = 0; i < ids.size(); i++) {
                 preparedStatement.setString(i + 1, ids.get(i));
             }
@@ -46,7 +48,7 @@ public class MemberRepository {
                 member.setBirthday(LocalDate.parse(resultSet.getString("birth_date")));
                 member.setEmail(resultSet.getString("email"));
                 member.setOccupation(OccupationEnum.JUNIOR);
-                member.setPhoneNumber(resultSet.getString("phone"));
+                member.setPhoneNumber(resultSet.getString("phone_number"));
                 members.add(member);
             }
             return members;
