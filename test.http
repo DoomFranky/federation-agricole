@@ -1,0 +1,106 @@
+### Create Collectivity
+POST http://localhost:8080/collectivities
+Content-Type: application/json
+
+{
+  "location": "Antananarivo",
+  "specialization": "Rice Farming",
+  "members": ["{{memberId1}}", "{{memberId2}}"],
+  "structure": {
+    "president": "{{memberId1}}",
+    "vicePresident": "{{memberId2}}",
+    "treasurer": "{{memberId3}}",
+    "secretary": "{{memberId4}}"
+  },
+  "federationApproval": true
+}
+
+### Get Collectivity
+GET http://localhost:8080/collectivities/{{collectivityId}}
+
+### Get All Collectivities
+GET http://localhost:8080/collectivities
+
+### Assign Identity to Collectivity
+PUT http://localhost:8080/collectivities/{{collectivityId}}/informations
+Content-Type: application/json
+
+{
+  "number": 101,
+  "name": "Collectif Rizteurs Avaradrano"
+}
+
+### Get Collectivity Transactions
+GET http://localhost:8080/collectivities/{{collectivityId}}/transactions?from=2025-01-01&to=2026-12-31
+
+### Create Membership Fees
+POST http://localhost:8080/collectivities/{{collectivityId}}/membershipFees
+Content-Type: application/json
+
+[
+  {
+    "eligibleFrom": "2026-01-01",
+    "frequency": "MONTHLY",
+    "amount": 5000,
+    "label": "Cotisation mensuelle"
+  },
+  {
+    "eligibleFrom": "2026-01-01",
+    "frequency": "ANNUAL",
+    "amount": 50000,
+    "label": "Cotisation annuelle obligatoire"
+  }
+]
+
+### Get Membership Fees
+GET http://localhost:8080/collectivities/{{collectivityId}}/membershipFees
+
+### Create Member
+POST http://localhost:8080/members
+Content-Type: application/json
+
+{
+  "information": {
+    "firstName": "Jean",
+    "lastName": "Rakoto",
+    "birthDate": "1990-05-15",
+    "gender": "MALE",
+    "address": "Antananarivo",
+    "profession": "Farmer",
+    "phoneNumber": "0341234567",
+    "email": "jean.rakoto{{$randomInt}}@mail.com",
+    "occupation": "JUNIOR"
+  },
+  "collectivityIdentifier": "{{collectivityId}}",
+  "referees": [
+    {
+      "memberIdentifier": "{{memberId1}}",
+      "relationshipNature": "friend"
+    },
+    {
+      "memberIdentifier": "{{memberId2}}",
+      "relationshipNature": "colleague"
+    }
+  ],
+  "registrationFeePaid": true,
+  "membershipDuesPaid": true
+}
+
+### Get Member
+GET http://localhost:8080/members/{{memberId}}
+
+### Create Member Payment
+POST http://localhost:8080/members/{{memberId}}/payments
+Content-Type: application/json
+
+[
+  {
+    "amount": 5000,
+    "membershipFeeIdentifier": "{{feeId}}",
+    "accountCreditedIdentifier": "{{accountId}}",
+    "paymentMode": "CASH"
+  }
+]
+
+### Health Check
+GET http://localhost:8080/ping

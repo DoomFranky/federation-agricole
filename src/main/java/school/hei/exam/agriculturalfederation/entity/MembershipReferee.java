@@ -5,14 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Builder
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CollectivityStructure {
-    private Member president;
-    private Member vicePresident;
-    private Member secretary;
-    private Member treasurer;
+public class MembershipReferee {
+    private String id;
+    private String refereeMemberId;
+    private String refereeCollectivityId;
+    private String relationshipNature;
 }
-

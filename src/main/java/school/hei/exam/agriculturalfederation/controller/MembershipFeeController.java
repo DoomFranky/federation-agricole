@@ -7,28 +7,27 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import school.hei.exam.agriculturalfederation.dto.CreateMemberDTO;
-import school.hei.exam.agriculturalfederation.dto.MemberRestDTO;
-import school.hei.exam.agriculturalfederation.entity.Member;
+import school.hei.exam.agriculturalfederation.dto.CreateMembershipFeeDTO;
+import school.hei.exam.agriculturalfederation.dto.MembershipFeeDTO;
 import school.hei.exam.agriculturalfederation.exception.BadRequestException;
 import school.hei.exam.agriculturalfederation.exception.NotFoundException;
-import school.hei.exam.agriculturalfederation.service.MemberService;
+import school.hei.exam.agriculturalfederation.service.DuesService;
+
+import java.util.List;
 
 @RestController
-public class MemberController {
-    private final MemberService memberService;
+public class MembershipFeeController {
+    private final DuesService duesService;
 
-    public MemberController(MemberService memberService) {
-        this.memberService = memberService;
+    public MembershipFeeController(DuesService duesService) {
+        this.duesService = duesService;
     }
 
-    @PostMapping("/members")
-    public ResponseEntity<?> createMember(@RequestBody CreateMemberDTO dto) {
+    @GetMapping("/collectivities/{id}/membershipFees")
+    public ResponseEntity<?> getFees(@PathVariable String id) {
         try {
-            MemberRestDTO created = memberService.createMember(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (BadRequestException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            List<MembershipFeeDTO> fees = duesService.getFees(id);
+            return ResponseEntity.ok(fees);
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
@@ -36,11 +35,13 @@ public class MemberController {
         }
     }
 
-    @GetMapping("/members/{id}")
-    public ResponseEntity<?> getMember(@PathVariable String id) {
+    @PostMapping("/collectivities/{id}/membershipFees")
+    public ResponseEntity<?> createFees(@PathVariable String id, @RequestBody List<CreateMembershipFeeDTO> dtos) {
         try {
-            Member member = memberService.getMemberById(id);
-            return ResponseEntity.ok(member);
+            List<MembershipFeeDTO> created = duesService.createFees(id, dtos);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (BadRequestException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {

@@ -1,6 +1,4 @@
-\c federation_agricole_db
-
--- CREATE EXTENSION IF NOT EXISTS "pgcrypto";   -- gen_random_uuid()
+\c agricultural_federation_db
 
 -- ---------------------------------------------------------------------------
 -- ENUMS
@@ -159,12 +157,12 @@ CREATE TABLE collectivity_mandate (
                                           CHECK (occupation IN ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY')),
                                       date            DATE NOT NULL DEFAULT CURRENT_DATE,
 
-                                      UNIQUE (collectivity_id, occupation, year)        -- one holder per role per year
+                                      UNIQUE (collectivity_id, occupation, date)        -- one holder per role per year
 );
 
 -- Enforce the max 2 mandates per (member, collectivity, occupation) rule via constraint
 CREATE UNIQUE INDEX uq_mandate_count
-    ON collectivity_mandate (collectivity_id, member_id, occupation, year);
+    ON collectivity_mandate (collectivity_id, member_id, occupation, date);
 
 -- (The "≤2 mandates" business rule is enforced in application logic / trigger)
 
@@ -174,7 +172,7 @@ CREATE UNIQUE INDEX uq_mandate_count
 
 CREATE TABLE federation_mandate (
                                     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                    federation_id UUID NOT NULL REFERENCES federation(id),
+                                    federation_id INTEGER NOT NULL REFERENCES federation(id),
                                     member_id   UUID NOT NULL REFERENCES member(id),
                                     occupation  member_occupation NOT NULL
                                         CHECK (occupation IN ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY')),
@@ -224,7 +222,7 @@ CREATE TABLE treasury_account (
                                   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     -- Belongs to either a collectivity OR the federation (exactly one must be set)
                                   collectivity_id UUID REFERENCES collectivity(id),
-                                  federation_id   UUID REFERENCES federation(id),
+                                  federation_id   INTEGER REFERENCES federation(id),
                                   account_type    account_type NOT NULL,
                                   balance_mga     NUMERIC(14,2) NOT NULL DEFAULT 0,
                                   currency        CHAR(3) NOT NULL DEFAULT 'MGA',
@@ -278,7 +276,7 @@ CREATE TABLE mobile_money_account (
 CREATE TABLE activity (
                           id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                           collectivity_id UUID REFERENCES collectivity(id),   -- NULL if federation-level
-                          federation_id   UUID REFERENCES federation(id),
+                          federation_id   INTEGER REFERENCES federation(id),
                           scope           activity_scope NOT NULL,
                           activity_type   activity_type NOT NULL,
                           title           TEXT NOT NULL,
@@ -328,7 +326,7 @@ CREATE TABLE attendance (
 
 CREATE TABLE federation_report (
                                    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                   federation_id       UUID NOT NULL REFERENCES federation(id),
+                                   federation_id       INTEGER NOT NULL REFERENCES federation(id),
                                    generated_by        UUID REFERENCES member(id),     -- secretary
                                    period_start        DATE NOT NULL,
                                    period_end          DATE NOT NULL,
