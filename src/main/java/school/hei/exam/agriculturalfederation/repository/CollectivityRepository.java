@@ -29,8 +29,8 @@ public class CollectivityRepository {
         List<Collectivity> result = new ArrayList<>();
         String sql =
                 """
-                        SELECT (id, number, name, location, agricultural_speciality) FROM collectivity
-                        """;
+                        SELECT (id, number, name, location, agricultural_specialty) FROM collectivity
+                 """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -38,7 +38,7 @@ public class CollectivityRepository {
                             .id(rs.getString("id"))
                             .number(rs.getInt("number"))
                             .name(rs.getString("name"))
-                            .specialization(rs.getString("agricultural_speciality"))
+                            .specialization(rs.getString("agricultural_specialty"))
                             .build();
                     result.add(collectivity);
                 }
@@ -52,10 +52,9 @@ public class CollectivityRepository {
     //=========================================================================================================
 
     public List<Collectivity> saveCollectivity(List<Collectivity> collectivityList) {
-        List<Collectivity> result = new ArrayList<>();
         String sqlInsertCollectivity =
                 """
-                        INSERT INTO collectivity (location, federation_id, id) 
+                        INSERT INTO collectivity (location, federation_id, id)
                         VALUES (?, (SELECT (id) FROM federation LIMIT 1), ?);
                         """;
 
@@ -87,7 +86,7 @@ public class CollectivityRepository {
     }
 
     public Collectivity findById(String id) {
-        String sql = "SELECT id, number, name, location, agricultural_speciality FROM collectivity WHERE id = ?";
+        String sql = "SELECT id, number, name, location, agricultural_specialty FROM collectivity WHERE id = ?::uuid";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -96,7 +95,7 @@ public class CollectivityRepository {
                             .id(rs.getString("id"))
                             .number(rs.getInt("number"))
                             .name(rs.getString("name"))
-                            .specialization(rs.getString("agricultural_speciality"))
+                            .specialization(rs.getString("agricultural_specialty"))
                             .location(rs.getString("location"))
                             .build();
                 }
@@ -108,7 +107,7 @@ public class CollectivityRepository {
     }
 
     public void updateIdentity(String id, Integer number, String name) {
-        String sql = "UPDATE collectivity SET number = ?, name = ? WHERE id = ?";
+        String sql = "UPDATE collectivity SET number = ?, name = ? WHERE id = ?::uuid";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setObject(1, number);
             ps.setString(2, name);
@@ -161,22 +160,27 @@ public class CollectivityRepository {
                 String post = field.getName();
                 Member member = (Member) field.get(structure);
                 if (member == null) continue;
-                if (post.equals("president")) {
-                    ps.setString(1, member.getId());
-                    ps.setString(2, collectivity.getId());
-                    ps.setString(3, OccupationEnum.PRESIDENT.name());
-                } else if (post.equals("vicePresident")) {
-                    ps.setString(1, member.getId());
-                    ps.setString(2, collectivity.getId());
-                    ps.setString(3, OccupationEnum.VICE_PRESIDENT.name());
-                } else if (post.equals("secretary")) {
-                    ps.setString(1, member.getId());
-                    ps.setString(2, collectivity.getId());
-                    ps.setString(3, OccupationEnum.SECRETARY.name());
-                } else if (post.equals("treasurer")) {
-                    ps.setString(1, member.getId());
-                    ps.setString(2, collectivity.getId());
-                    ps.setString(3, OccupationEnum.TREASURER.name());
+                switch (post) {
+                    case "president" -> {
+                        ps.setString(1, member.getId());
+                        ps.setString(2, collectivity.getId());
+                        ps.setString(3, OccupationEnum.PRESIDENT.name());
+                    }
+                    case "vicePresident" -> {
+                        ps.setString(1, member.getId());
+                        ps.setString(2, collectivity.getId());
+                        ps.setString(3, OccupationEnum.VICE_PRESIDENT.name());
+                    }
+                    case "secretary" -> {
+                        ps.setString(1, member.getId());
+                        ps.setString(2, collectivity.getId());
+                        ps.setString(3, OccupationEnum.SECRETARY.name());
+                    }
+                    case "treasurer" -> {
+                        ps.setString(1, member.getId());
+                        ps.setString(2, collectivity.getId());
+                        ps.setString(3, OccupationEnum.TREASURER.name());
+                    }
                 }
                 ps.addBatch();
             }
