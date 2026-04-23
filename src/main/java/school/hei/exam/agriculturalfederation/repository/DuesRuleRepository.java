@@ -1,6 +1,7 @@
 package school.hei.exam.agriculturalfederation.repository;
 
 import org.springframework.stereotype.Repository;
+
 import school.hei.exam.agriculturalfederation.entity.DuesRule;
 
 import java.math.BigDecimal;

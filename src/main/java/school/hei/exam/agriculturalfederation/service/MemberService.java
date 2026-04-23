@@ -17,6 +17,7 @@ import school.hei.exam.agriculturalfederation.repository.MemberRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class MemberService {
@@ -37,7 +38,9 @@ public class MemberService {
 
     public List<MemberRestDTO> createMember(List<CreateMemberDTO> dto) {
     List<MemberRestDTO> listOfMember = new ArrayList<>(); 
-        for (CreateMemberDTO createMemberDTO : dto) {
+    List<UUID> uuids = new ArrayList<>();
+    UUID uuid;
+    for (CreateMemberDTO createMemberDTO : dto) {
             createMemberDTO.setInformation(
                 new MemberInformationDTO(
                     createMemberDTO.getFirstName(),
@@ -53,13 +56,16 @@ public class MemberService {
             );
 
             validateCreateMemberInput(createMemberDTO);
-            
-            Member newMember = createMemberEntity(createMemberDTO.getInformation());
-            String membershipId = membershipRepository.createMembership(
+            uuid  = UUID.randomUUID();
+            Member newMember = createMemberEntity(createMemberDTO.getInformation(),uuid);
+            UUID memberShipUUID = UUID.randomUUID();
+            membershipRepository.createMembership(
                 newMember.getId(), 
                 createMemberDTO.getCollectivityIdentifier(), 
-                OccupationEnum.JUNIOR
+                OccupationEnum.JUNIOR,
+                memberShipUUID
             );
+            String membershipId = memberShipUUID.toString();
 
             List<RefereeInfo> refereeInfos = buildRefereeInfos(createMemberDTO.getReferees(), createMemberDTO.getCollectivityIdentifier());
             validateReferees(refereeInfos);
@@ -87,6 +93,7 @@ public class MemberService {
                 buildRefereeDTOs(refereeMembers, refereeInfos)
             )
             );
+            uuids.add(uuid);
         }
         return listOfMember;
     }
@@ -138,8 +145,9 @@ public class MemberService {
         return infos;
     }
 
-    private Member createMemberEntity(MemberInformationDTO info) {
+    private Member createMemberEntity(MemberInformationDTO info,UUID uuid) {
         Member member = new Member();
+        member.setId(uuid.toString());
         member.setFirstName(info.getFirstName());
         member.setLastName(info.getLastName());
         member.setBirthDate(info.getBirthDate());
@@ -149,7 +157,8 @@ public class MemberService {
         member.setPhoneNumber(info.getPhoneNumber());
         member.setEmail(info.getEmail());
         member.setOccupation(OccupationEnum.JUNIOR);
-        return memberRepository.create(member);
+        memberRepository.create(member,uuid);
+        return memberRepository.findById(uuid.toString());
     }
 
     private List<String> buildRefereeDTOs(

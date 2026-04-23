@@ -1,6 +1,7 @@
 package school.hei.exam.agriculturalfederation.repository;
 
 import org.springframework.stereotype.Repository;
+
 import school.hei.exam.agriculturalfederation.entity.GenderEnum;
 import school.hei.exam.agriculturalfederation.entity.Member;
 import school.hei.exam.agriculturalfederation.entity.MembershipReferee;
@@ -76,11 +77,12 @@ public class MemberRepository {
         return members;
     }
 
-    public Member create(Member member) {
+    public void create(Member member,UUID uuid) {
         String sql = "INSERT INTO member (id, first_name, last_name, birth_date, gender, address, profession, phone_number, email) " +
-                     "VALUES (?::uuid, ?, ?, ?, ?::gender, ?, ?, ?, ?) RETURNING id";
+                     "VALUES (?::uuid, ?, ?, ?, ?::gender, ?, ?, ?, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            String memberId = UUID.randomUUID().toString();
+            connection.setAutoCommit(false);
+            String memberId = uuid.toString();
             ps.setString(1, memberId);
             ps.setString(2, member.getFirstName());
             ps.setString(3, member.getLastName());
@@ -90,15 +92,18 @@ public class MemberRepository {
             ps.setString(7, member.getProfession());
             ps.setString(8, member.getPhoneNumber());
             ps.setString(9, member.getEmail());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    member.setId(rs.getString("id"));
-                }
-            }
+            ps.executeUpdate();
+            
+            connection.commit();
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException e1) {
+                // TODO Auto-generated catch block
+                throw new RuntimeException(e1);
+            }
             throw new RuntimeException(e);
         }
-        return member;
     }
 
     private Member mapResultSetToMember(ResultSet rs) throws SQLException {

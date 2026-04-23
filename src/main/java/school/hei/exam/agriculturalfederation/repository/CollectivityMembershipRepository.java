@@ -1,6 +1,7 @@
 package school.hei.exam.agriculturalfederation.repository;
 
 import org.springframework.stereotype.Repository;
+
 import school.hei.exam.agriculturalfederation.entity.CollectivityStructure;
 import school.hei.exam.agriculturalfederation.entity.Member;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
@@ -25,11 +26,11 @@ public class CollectivityMembershipRepository {
         this.memberRepository = memberRepository;
     }
 
-    public String createMembership(String memberId, String collectivityId, OccupationEnum occupation) {
+    public String createMembership(String memberId, String collectivityId, OccupationEnum occupation,UUID membershipuuId) {
         String sql = "INSERT INTO collectivity_membership (id, member_id, collectivity_id, occupation, joined_at) " +
-                     "VALUES (?::uuid, ?::uuid, ?::uuid, ?::member_occupation, ?) RETURNING id";
+                     "VALUES (?::uuid, ?::uuid, ?::uuid, ?::member_occupation, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            String membershipId = UUID.randomUUID().toString();
+            String membershipId = membershipuuId.toString();
             ps.setString(1, membershipId);
             ps.setString(2, memberId);
             ps.setString(3, collectivityId);

@@ -18,6 +18,7 @@ import school.hei.exam.agriculturalfederation.repository.MemberRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,7 +57,8 @@ public class CollectivityService {
                 membershipRepository.createMembership(
                     memberId, 
                     collectivity.getId(), 
-                    OccupationEnum.JUNIOR
+                    OccupationEnum.JUNIOR,
+                    UUID.randomUUID()
                 );
             }
         }
