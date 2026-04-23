@@ -165,6 +165,35 @@ paths:
           description: Provided query parameters occur some exceptions.
         404:
           description: Collectivity not found.
+  '/collectivities/{id}/financialAccounts':
+    get:
+      summary: Get financial accounts for a collectivity
+      description: |
+        Returns the list of financial accounts (cash, mobile money, or bank) with their balance.
+        The optional query parameter `at` specifies the date to get account balances from.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: at
+          schema:
+            type: string
+            format: date
+          required: false
+      responses:
+        200:
+          description: List of financial accounts with balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FinancialAccount'
+        404:
+          description: Collectivity not found.
   '/members':
     post:
       summary: Create list of members

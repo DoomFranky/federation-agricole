@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import school.hei.exam.agriculturalfederation.dto.CollectivityTransactionDTO;
+import school.hei.exam.agriculturalfederation.dto.FinancialAccountDTO;
 import school.hei.exam.agriculturalfederation.dto.IdentityCollectivityDTO;
 import school.hei.exam.agriculturalfederation.dto.InputCollectivityDTO;
 import school.hei.exam.agriculturalfederation.entity.Collectivity;
@@ -19,6 +20,7 @@ import school.hei.exam.agriculturalfederation.exception.ConflictException;
 import school.hei.exam.agriculturalfederation.exception.NotFoundException;
 import school.hei.exam.agriculturalfederation.service.CollectivityService;
 import school.hei.exam.agriculturalfederation.service.TransactionService;
+import school.hei.exam.agriculturalfederation.service.TreasuryAccountService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,10 +29,12 @@ import java.util.List;
 public class CollectivityController {
     private final CollectivityService collectivityService;
     private final TransactionService transactionService;
+    private final TreasuryAccountService treasuryAccountService;
 
-    public CollectivityController(CollectivityService collectivityService, TransactionService transactionService) {
+    public CollectivityController(CollectivityService collectivityService, TransactionService transactionService, TreasuryAccountService treasuryAccountService) {
         this.collectivityService = collectivityService;
         this.transactionService = transactionService;
+        this.treasuryAccountService = treasuryAccountService;
     }
 
     @PostMapping("/collectivities")
@@ -99,6 +103,21 @@ public class CollectivityController {
         try {
             List<Collectivity> collectivities = collectivityService.getAllCollectivities();
             return ResponseEntity.ok(collectivities);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/collectivities/{id}/financialAccounts")
+    public ResponseEntity<?> getFinancialAccounts(
+            @PathVariable String id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate at
+    ) {
+        try {
+            List<FinancialAccountDTO> accounts = treasuryAccountService.getFinancialAccounts(id, at);
+            return ResponseEntity.ok(accounts);
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
