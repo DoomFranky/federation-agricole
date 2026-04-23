@@ -2,10 +2,13 @@ package school.hei.exam.agriculturalfederation.service;
 
 import org.springframework.stereotype.Service;
 import school.hei.exam.agriculturalfederation.dto.CreateMemberDTO;
+import school.hei.exam.agriculturalfederation.dto.MemberInformationDTO;
 import school.hei.exam.agriculturalfederation.dto.MemberRestDTO;
+import school.hei.exam.agriculturalfederation.dto.RefereeDTO;
 import school.hei.exam.agriculturalfederation.entity.GenderEnum;
 import school.hei.exam.agriculturalfederation.entity.Member;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
+import school.hei.exam.agriculturalfederation.entity.RefereeInfo;
 import school.hei.exam.agriculturalfederation.exception.BadRequestException;
 import school.hei.exam.agriculturalfederation.exception.NotFoundException;
 import school.hei.exam.agriculturalfederation.repository.CollectivityMembershipRepository;
@@ -32,41 +35,60 @@ public class MemberService {
         this.membershipRepository = membershipRepository;
     }
 
-    public MemberRestDTO createMember(CreateMemberDTO dto) {
-        validateCreateMemberInput(dto);
+    public List<MemberRestDTO> createMember(List<CreateMemberDTO> dto) {
+    List<MemberRestDTO> listOfMember = new ArrayList<>(); 
+        for (CreateMemberDTO createMemberDTO : dto) {
+            createMemberDTO.setInformation(
+                new MemberInformationDTO(
+                    createMemberDTO.getFirstName(),
+                    createMemberDTO.getLastName(),
+                    createMemberDTO.getBirthDate(),
+                    createMemberDTO.getGender().toString(),
+                    createMemberDTO.getAddress(),
+                    createMemberDTO.getProfession(),
+                    createMemberDTO.getPhoneNumber(),
+                    createMemberDTO.getEmail(),
+                    createMemberDTO.getOccupation().toString()
+                )
+            );
 
-        Member newMember = createMemberEntity(dto.getInformation());
-        String membershipId = membershipRepository.createMembership(
-            newMember.getId(), 
-            dto.getCollectivityIdentifier(), 
-            OccupationEnum.JUNIOR
-        );
+            validateCreateMemberInput(createMemberDTO);
+            
+            Member newMember = createMemberEntity(createMemberDTO.getInformation());
+            String membershipId = membershipRepository.createMembership(
+                newMember.getId(), 
+                createMemberDTO.getCollectivityIdentifier(), 
+                OccupationEnum.JUNIOR
+            );
 
-        List<CollectivityMembershipRepository.RefereeInfo> refereeInfos = buildRefereeInfos(dto.getReferees(), dto.getCollectivityIdentifier());
-        validateReferees(refereeInfos);
-        membershipRepository.addReferees(membershipId, refereeInfos);
-
-        List<Member> refereeMembers = new ArrayList<>();
-        for (var ref : refereeInfos) {
-            Member referee = memberRepository.findById(ref.memberId());
-            if (referee != null) {
-                refereeMembers.add(referee);
+            List<RefereeInfo> refereeInfos = buildRefereeInfos(createMemberDTO.getReferees(), createMemberDTO.getCollectivityIdentifier());
+            validateReferees(refereeInfos);
+            membershipRepository.addReferees(membershipId, refereeInfos);
+            
+            List<Member> refereeMembers = new ArrayList<>();
+            for (var ref : refereeInfos) {
+                Member referee = memberRepository.findById(ref.memberId());
+                if (referee != null) {
+                    refereeMembers.add(referee);
+                }
             }
+            listOfMember.add(
+            new MemberRestDTO(
+                newMember.getId(),
+                newMember.getFirstName(),
+                newMember.getLastName(),
+                newMember.getBirthDate(),
+                newMember.getGender().name(),
+                newMember.getAddress(),
+                newMember.getProfession(),
+                newMember.getPhoneNumber(),
+                newMember.getEmail(),
+                newMember.getOccupation().name(),
+                buildRefereeDTOs(refereeMembers, refereeInfos)
+            )
+            );
         }
-
-        return new MemberRestDTO(
-            newMember.getId(),
-            newMember.getFirstName(),
-            newMember.getLastName(),
-            newMember.getBirthDate(),
-            newMember.getGender().name(),
-            newMember.getAddress(),
-            newMember.getProfession(),
-            newMember.getPhoneNumber(),
-            newMember.getEmail(),
-            newMember.getOccupation().name(),
-            buildRefereeDTOs(refereeMembers, refereeInfos)
-        );
+        return listOfMember;
     }
 
     private void validateCreateMemberInput(CreateMemberDTO dto) {
@@ -84,7 +106,7 @@ public class MemberService {
         }
     }
 
-    private void validateReferees(List<CollectivityMembershipRepository.RefereeInfo> referees) {
+    private void validateReferees(List<RefereeInfo> referees) {
         if (referees.size() < MIN_REFEREES) {
             throw new BadRequestException("At least " + MIN_REFEREES + " referees are required");
         }
@@ -104,20 +126,19 @@ public class MemberService {
         }
     }
 
-    private List<CollectivityMembershipRepository.RefereeInfo> buildRefereeInfos(
-            List<CreateMemberDTO.RefereeDTO> refereeDTOs, String collectivityId) {
-        List<CollectivityMembershipRepository.RefereeInfo> infos = new ArrayList<>();
-        for (CreateMemberDTO.RefereeDTO ref : refereeDTOs) {
-            infos.add(new CollectivityMembershipRepository.RefereeInfo(
-                ref.getMemberIdentifier(),
-                collectivityId,
-                ref.getRelationshipNature()
+    private List<RefereeInfo> buildRefereeInfos(
+            List<String> refereeDTOs, String collectivityId) {
+        List<RefereeInfo> infos = new ArrayList<>();
+        for (String ref : refereeDTOs) {
+            infos.add(new RefereeInfo(
+                ref,
+                collectivityId
             ));
         }
         return infos;
     }
 
-    private Member createMemberEntity(CreateMemberDTO.MemberInformationDTO info) {
+    private Member createMemberEntity(MemberInformationDTO info) {
         Member member = new Member();
         member.setFirstName(info.getFirstName());
         member.setLastName(info.getLastName());
@@ -131,13 +152,13 @@ public class MemberService {
         return memberRepository.create(member);
     }
 
-    private List<MemberRestDTO.RefereeDTO> buildRefereeDTOs(
-            List<Member> members, List<CollectivityMembershipRepository.RefereeInfo> infos) {
-        List<MemberRestDTO.RefereeDTO> dtos = new ArrayList<>();
+    private List<String> buildRefereeDTOs(
+            List<Member> members, List<RefereeInfo> infos) {
+        List<String> dtos = new ArrayList<>();
         for (int i = 0; i < members.size(); i++) {
             Member ref = members.get(i);
-            String relation = (i < infos.size()) ? infos.get(i).relationshipNature() : "";
-            dtos.add(new MemberRestDTO.RefereeDTO(ref.getId(), ref.getFirstName(), ref.getLastName(), relation));
+            String relation = null;
+            dtos.add(ref.getId());//(new RefereeDTO(ref.getId(), relation));
         }
         return dtos;
     }

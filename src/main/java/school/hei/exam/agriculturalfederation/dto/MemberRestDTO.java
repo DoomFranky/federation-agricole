@@ -14,13 +14,13 @@ public class MemberRestDTO {
     private String phoneNumber;
     private String email;
     private String occupation;
-    private List<RefereeDTO> referees;
+    private List<String> referees;
 
     public MemberRestDTO() {}
 
     public MemberRestDTO(String id, String firstName, String lastName, LocalDate birthDate,
             String gender, String address, String profession, String phoneNumber,
-            String email, String occupation, List<RefereeDTO> referees) {
+            String email, String occupation, List<String> referees) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -54,30 +54,7 @@ public class MemberRestDTO {
     public void setEmail(String email) { this.email = email; }
     public String getOccupation() { return occupation; }
     public void setOccupation(String occupation) { this.occupation = occupation; }
-    public List<RefereeDTO> getReferees() { return referees; }
-    public void setReferees(List<RefereeDTO> referees) { this.referees = referees; }
+    public List<String> getReferees() { return referees; }
+    public void setReferees(List<String> referees) { this.referees = referees; }
 
-    public static class RefereeDTO {
-        private String id;
-        private String firstName;
-        private String lastName;
-        private String relationshipNature;
-
-        public RefereeDTO() {}
-        public RefereeDTO(String id, String firstName, String lastName, String relationshipNature) {
-            this.id = id;
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.relationshipNature = relationshipNature;
-        }
-
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getFirstName() { return firstName; }
-        public void setFirstName(String firstName) { this.firstName = firstName; }
-        public String getLastName() { return lastName; }
-        public void setLastName(String lastName) { this.lastName = lastName; }
-        public String getRelationshipNature() { return relationshipNature; }
-        public void setRelationshipNature(String relationshipNature) { this.relationshipNature = relationshipNature; }
-    }
 }

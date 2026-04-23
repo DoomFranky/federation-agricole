@@ -1,5 +1,7 @@
 package school.hei.exam.agriculturalfederation.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,9 +25,9 @@ public class MemberController {
     }
 
     @PostMapping("/members")
-    public ResponseEntity<?> createMember(@RequestBody CreateMemberDTO dto) {
+    public ResponseEntity<?> createMembers(@RequestBody List<CreateMemberDTO> dto) {
         try {
-            MemberRestDTO created = memberService.createMember(dto);
+            List<MemberRestDTO> created = memberService.createMember(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (BadRequestException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

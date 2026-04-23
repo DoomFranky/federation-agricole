@@ -4,6 +4,7 @@ import org.springframework.stereotype.Repository;
 import school.hei.exam.agriculturalfederation.entity.CollectivityStructure;
 import school.hei.exam.agriculturalfederation.entity.Member;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
+import school.hei.exam.agriculturalfederation.entity.RefereeInfo;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -43,14 +44,13 @@ public class CollectivityMembershipRepository {
 
     public void addReferees(String membershipId, List<RefereeInfo> referees) {
         String sql = "INSERT INTO membership_referee (id, membership_id, referee_member_id, referee_collectivity_id, relationship_nature) " +
-                   "VALUES (?::uuid, ?::uuid, ?::uuid, ?::uuid, ?)";
+                   "VALUES (?::uuid, ?::uuid, ?::uuid, ?::uuid)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             for (RefereeInfo referee : referees) {
                 ps.setString(1, UUID.randomUUID().toString());
                 ps.setString(2, membershipId);
                 ps.setString(3, referee.memberId());
                 ps.setString(4, referee.collectivityId());
-                ps.setString(5, referee.relationshipNature());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -59,7 +59,7 @@ public class CollectivityMembershipRepository {
         }
     }
 
-    public record RefereeInfo(String memberId, String collectivityId, String relationshipNature) {}
+//    public record RefereeInfo(String memberId, String collectivityId, String relationshipNature) {}
 
     public List<String> findRefereeIdsForMembership(String membershipId) {
         List<String> refereeIds = new ArrayList<>();
