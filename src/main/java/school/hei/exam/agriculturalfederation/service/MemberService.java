@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import school.hei.exam.agriculturalfederation.dto.CreateMemberDTO;
 import school.hei.exam.agriculturalfederation.dto.MemberInformationDTO;
 import school.hei.exam.agriculturalfederation.dto.MemberRestDTO;
-import school.hei.exam.agriculturalfederation.dto.RefereeDTO;
 import school.hei.exam.agriculturalfederation.entity.GenderEnum;
 import school.hei.exam.agriculturalfederation.entity.Member;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
@@ -56,11 +55,18 @@ public class MemberService {
 
             validateCreateMemberInput(createMemberDTO);
 
-            if (collectivityRepository.findById(createMemberDTO.getCollectivityIdentifier()) == null) {
+            var collectivity = collectivityRepository.findById(createMemberDTO.getCollectivityIdentifier());
+            if (collectivity == null) {
+                collectivity = collectivityRepository.findByNumber(Integer.parseInt(createMemberDTO.getCollectivityIdentifier()));
+            }
+            if (collectivity == null) {
+                collectivity = collectivityRepository.findByName(createMemberDTO.getCollectivityIdentifier());
+            }
+            if (collectivity == null) {
                 throw new NotFoundException("Collectivity not found: " + createMemberDTO.getCollectivityIdentifier());
             }
 
-            List<RefereeInfo> refereeInfos = buildRefereeInfos(createMemberDTO.getReferees(), createMemberDTO.getCollectivityIdentifier());
+            List<RefereeInfo> refereeInfos = buildRefereeInfos(createMemberDTO.getReferees(), collectivity.getId());
             validateReferees(refereeInfos);
 
             UUID uuid = UUID.randomUUID();
@@ -69,7 +75,7 @@ public class MemberService {
             UUID memberShipUUID = UUID.randomUUID();
             membershipRepository.createMembership(
                 newMember.getId(),
-                createMemberDTO.getCollectivityIdentifier(),
+                collectivity.getId(),
                 OccupationEnum.JUNIOR,
                 memberShipUUID
             );

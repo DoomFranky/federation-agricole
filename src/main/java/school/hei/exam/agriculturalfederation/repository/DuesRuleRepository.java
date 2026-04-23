@@ -4,7 +4,6 @@ import org.springframework.stereotype.Repository;
 
 import school.hei.exam.agriculturalfederation.entity.DuesRule;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -23,12 +22,27 @@ public class DuesRuleRepository {
         this.connection = connection;
     }
 
+    public DuesRule findById(String id) {
+        String sql = "SELECT id, collectivity_id, frequency, amount_mga, label, effective_from, effective_to FROM dues_rule WHERE id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToDuesRule(rs, true);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
     public List<DuesRule> findActiveByCollectivity(String collectivityId) {
         List<DuesRule> rules = new ArrayList<>();
         String sql = """
             SELECT id, collectivity_id, frequency, amount_mga, label, effective_from, effective_to
             FROM dues_rule
-            WHERE collectivity_id = ?::uuid
+            WHERE collectivity_id = ?
             AND effective_to IS NULL
             AND effective_from <= CURRENT_DATE
             ORDER BY effective_from DESC
@@ -49,7 +63,7 @@ public class DuesRuleRepository {
     public DuesRule create(DuesRule rule) {
         String sql = """
             INSERT INTO dues_rule (id, collectivity_id, frequency, amount_mga, label, effective_from, effective_to)
-            VALUES (?::uuid, ?::uuid, ?::dues_frequency, ?, ?, ?, ?)
+            VALUES (?, ?, ?::dues_frequency, ?, ?, ?, ?)
             RETURNING id
             """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -73,7 +87,7 @@ public class DuesRuleRepository {
     }
 
     public void deactivate(String ruleId) {
-        String sql = "UPDATE dues_rule SET effective_to = ? WHERE id = ?::uuid";
+        String sql = "UPDATE dues_rule SET effective_to = ? WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setDate(1, Date.valueOf(LocalDate.now()));
             ps.setString(2, ruleId);

@@ -2,7 +2,6 @@ package school.hei.exam.agriculturalfederation.repository;
 
 import org.springframework.stereotype.Repository;
 
-import school.hei.exam.agriculturalfederation.entity.CollectivityStructure;
 import school.hei.exam.agriculturalfederation.entity.Member;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
 import school.hei.exam.agriculturalfederation.entity.RefereeInfo;
@@ -28,7 +27,7 @@ public class CollectivityMembershipRepository {
 
     public String createMembership(String memberId, String collectivityId, OccupationEnum occupation,UUID membershipuuId) {
         String sql = "INSERT INTO collectivity_membership (id, member_id, collectivity_id, occupation, joined_at) " +
-                     "VALUES (?::uuid, ?::uuid, ?::uuid, ?::member_occupation, ?)";
+                     "VALUES (? , ? , ? , ?::member_occupation, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             String membershipId = membershipuuId.toString();
             ps.setString(1, membershipId);
@@ -45,7 +44,7 @@ public class CollectivityMembershipRepository {
 
     public void addReferees(String membershipId, List<RefereeInfo> referees) {
         String sql = "INSERT INTO membership_referee (id, membership_id, referee_member_id, referee_collectivity_id, relationship_nature) " +
-                   "VALUES (?::uuid, ?::uuid, ?::uuid, ?::uuid)";
+                   "VALUES (? , ? , ? , ? )";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             for (RefereeInfo referee : referees) {
                 ps.setString(1, UUID.randomUUID().toString());
@@ -64,7 +63,7 @@ public class CollectivityMembershipRepository {
 
     public List<String> findRefereeIdsForMembership(String membershipId) {
         List<String> refereeIds = new ArrayList<>();
-        String sql = "SELECT referee_member_id FROM membership_referee WHERE membership_id = ?::uuid";
+        String sql = "SELECT referee_member_id FROM membership_referee WHERE membership_id = ? ";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, membershipId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -83,7 +82,7 @@ public class CollectivityMembershipRepository {
         String sql = "SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender, m.address, m.profession, m.phone_number, m.email " +
                   "FROM member m " +
                   "JOIN collectivity_membership cm ON cm.member_id = m.id " +
-                  "WHERE cm.collectivity_id = ?::uuid AND cm.left_at IS NULL";
+                  "WHERE cm.collectivity_id = ? AND cm.left_at IS NULL";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, collectivityId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -106,6 +105,29 @@ public class CollectivityMembershipRepository {
         return members;
     }
 
+    public String findActiveMembershipId(String memberId, String collectivityId) {
+        String sql;
+        if (collectivityId != null) {
+            sql = "SELECT id FROM collectivity_membership WHERE member_id = ? AND collectivity_id = ? AND left_at IS NULL";
+        } else {
+            sql = "SELECT id FROM collectivity_membership WHERE member_id = ? AND left_at IS NULL LIMIT 1";
+        }
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, memberId);
+            if (collectivityId != null) {
+                ps.setString(2, collectivityId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("id");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
     public List<String> findConfirmedMemberIdsWithMinTenure(String collectivityId, int daysMinTenure) {
         List<String> memberIds = new ArrayList<>();
         String sql;
@@ -113,7 +135,7 @@ public class CollectivityMembershipRepository {
         {
             sql = "SELECT cm.member_id " +
                     "FROM collectivity_membership cm " +
-                    "WHERE cm.collectivity_id = ?::uuid " +
+                    "WHERE cm.collectivity_id = ? " +
                     "AND cm.joined_at <= CURRENT_DATE - INTERVAL '1 day' * ? " +
                     "AND cm.left_at IS NULL";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {

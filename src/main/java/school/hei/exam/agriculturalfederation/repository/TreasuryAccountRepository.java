@@ -24,7 +24,7 @@ public class TreasuryAccountRepository {
 
     public List<TreasuryAccount> findByCollectivity(String collectivityId) {
         List<TreasuryAccount> accounts = new ArrayList<>();
-        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE collectivity_id = ?::uuid";
+        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE collectivity_id = ? ";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, collectivityId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -48,7 +48,7 @@ public class TreasuryAccountRepository {
 
     public List<TreasuryAccount> findByCollectivityAtDate(String collectivityId, LocalDate atDate) {
         List<TreasuryAccount> accounts = new ArrayList<>();
-        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE collectivity_id = ?::uuid AND as_of_date <= ?";
+        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE collectivity_id = ?  AND as_of_date <= ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, collectivityId);
             ps.setDate(2, Date.valueOf(atDate));
@@ -72,7 +72,7 @@ public class TreasuryAccountRepository {
     }
 
     public TreasuryAccount create(TreasuryAccount account) {
-        String sql = "INSERT INTO treasury_account (id, collectivity_id, account_type, balance_mga, as_of_date, currency) VALUES (?::uuid, ?::uuid, ?::account_type, ?, ?, 'MGA') RETURNING id";
+        String sql = "INSERT INTO treasury_account (id, collectivity_id, account_type, balance_mga, as_of_date, currency) VALUES (? , ? , ?::account_type, ?, ?, 'MGA') RETURNING id";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             String id = UUID.randomUUID().toString();
             ps.setString(1, id);
@@ -92,7 +92,7 @@ public class TreasuryAccountRepository {
     }
 
     public void updateBalance(String accountId, BigDecimal newBalance) {
-        String sql = "UPDATE treasury_account SET balance_mga = ?, as_of_date = ? WHERE id = ?::uuid";
+        String sql = "UPDATE treasury_account SET balance_mga = ?, as_of_date = ? WHERE id = ? ";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setBigDecimal(1, newBalance);
             ps.setDate(2, Date.valueOf(LocalDate.now()));
@@ -104,7 +104,7 @@ public class TreasuryAccountRepository {
     }
 
     public TreasuryAccount findById(String id) {
-        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE id = ?::uuid";
+        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE id = ? ";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {

@@ -25,7 +25,7 @@ public class PaymentReceiptRepository {
     public PaymentReceipt create(PaymentReceipt receipt) {
         String sql = """
             INSERT INTO payment_receipt (id, collectivity_membership_id, dues_rule_id, amount_mga, payment_method, collected_at, collected_by_treasurer, notes)
-            VALUES (?::uuid, ?::uuid, ?::uuid, ?, ?::payment_method, ?, ?::uuid, ?)
+            VALUES (? , ? , ? , ?, ?::payment_method, ?, ? , ?)
             RETURNING id
             """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -54,7 +54,7 @@ public class PaymentReceiptRepository {
         String sql = """
             SELECT id, collectivity_membership_id, dues_rule_id, amount_mga, payment_method, collected_at, collected_by_treasurer, notes
             FROM payment_receipt
-            WHERE collectivity_membership_id = ?::uuid
+            WHERE collectivity_membership_id = ? 
             ORDER BY collected_at DESC
             """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -76,7 +76,7 @@ public class PaymentReceiptRepository {
             SELECT pr.id, pr.collectivity_membership_id, pr.dues_rule_id, pr.amount_mga, pr.payment_method, pr.collected_at, pr.collected_by_treasurer, pr.notes
             FROM payment_receipt pr
             JOIN collectivity_membership cm ON cm.id = pr.collectivity_membership_id
-            WHERE cm.collectivity_id = ?::uuid
+            WHERE cm.collectivity_id = ? 
             AND pr.collected_at BETWEEN ? AND ?
             ORDER BY pr.collected_at DESC
             """;
@@ -99,7 +99,7 @@ public class PaymentReceiptRepository {
         String sql = """
             SELECT COALESCE(SUM(amount_mga), 0) as total
             FROM payment_receipt
-            WHERE collectivity_membership_id = ?::uuid
+            WHERE collectivity_membership_id = ? 
             AND collected_at BETWEEN ? AND ?
             """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {

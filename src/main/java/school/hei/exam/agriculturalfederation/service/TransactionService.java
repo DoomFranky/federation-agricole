@@ -3,7 +3,6 @@ package school.hei.exam.agriculturalfederation.service;
 import org.springframework.stereotype.Service;
 import school.hei.exam.agriculturalfederation.dto.CollectivityTransactionDTO;
 import school.hei.exam.agriculturalfederation.dto.FinancialAccountDTO;
-import school.hei.exam.agriculturalfederation.entity.PaymentReceipt;
 import school.hei.exam.agriculturalfederation.entity.TreasuryAccount;
 import school.hei.exam.agriculturalfederation.exception.BadRequestException;
 import school.hei.exam.agriculturalfederation.exception.NotFoundException;

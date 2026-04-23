@@ -4,7 +4,6 @@ import org.springframework.stereotype.Repository;
 
 import school.hei.exam.agriculturalfederation.entity.GenderEnum;
 import school.hei.exam.agriculturalfederation.entity.Member;
-import school.hei.exam.agriculturalfederation.entity.MembershipReferee;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
 
 import java.sql.Connection;
@@ -12,7 +11,6 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -27,7 +25,7 @@ public class MemberRepository {
 
     public Member findById(String id) {
         String sql = "SELECT id, first_name, last_name, birth_date, gender, address, profession, phone_number, email " +
-                   "FROM member WHERE id = ?::uuid";
+                   "FROM member WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -63,9 +61,9 @@ public class MemberRepository {
         }
         List<Member> members = new ArrayList<>();
         String sql = "SELECT id, first_name, last_name, birth_date, gender, address, profession, phone_number, email " +
-                   "FROM member WHERE id = ANY(?::uuid[])";
+                   "FROM member WHERE id = ANY(? [])";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setArray(1, connection.createArrayOf("uuid", ids.toArray()));
+            ps.setArray(1, connection.createArrayOf("text", ids.toArray()));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     members.add(mapResultSetToMember(rs));
@@ -79,7 +77,7 @@ public class MemberRepository {
 
     public void create(Member member,UUID uuid) {
         String sql = "INSERT INTO member (id, first_name, last_name, birth_date, gender, address, profession, phone_number, email) " +
-                     "VALUES (?::uuid, ?, ?, ?, ?::gender, ?, ?, ?, ?)";
+                     "VALUES (? , ?, ?, ?, ?::gender, ?, ?, ?, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             connection.setAutoCommit(false);
             String memberId = uuid.toString();

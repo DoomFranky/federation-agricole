@@ -6,5 +6,6 @@ public record CreateMemberPaymentDTO(
     BigDecimal amount,
     String membershipFeeIdentifier,
     String accountCreditedIdentifier,
-    String paymentMode
+    String paymentMode,
+    String collectivityId
 ) {}
