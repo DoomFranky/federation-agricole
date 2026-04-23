@@ -34,9 +34,9 @@ public class CollectivityController {
     }
 
     @PostMapping("/collectivities")
-    public ResponseEntity<?> createCollectivity(@RequestBody InputCollectivityDTO dto) {
+    public ResponseEntity<?> createCollectivity(@RequestBody List<InputCollectivityDTO> dto) {
         try {
-            Collectivity created = collectivityService.createCollectivity(dto);
+            List<Collectivity> created = collectivityService.createCollectivity(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (BadRequestException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

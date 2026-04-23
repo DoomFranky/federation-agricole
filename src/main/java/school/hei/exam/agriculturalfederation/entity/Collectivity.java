@@ -20,5 +20,5 @@ public class Collectivity {
     private String agriculturalSpecialty;
     private LocalDate createdAt;
     private CollectivityStructure structure;
-    private List<String> memberIds;
+    private List<Member> members;
 }

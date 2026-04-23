@@ -4,10 +4,8 @@ import org.springframework.stereotype.Repository;
 import school.hei.exam.agriculturalfederation.entity.Collectivity;
 import school.hei.exam.agriculturalfederation.entity.CollectivityStructure;
 import school.hei.exam.agriculturalfederation.entity.Member;
-import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,10 +17,12 @@ import java.util.UUID;
 public class CollectivityRepository {
     private final Connection connection;
     private final MemberRepository memberRepository;
+    private final CollectivityMembershipRepository membershipRepository;
 
-    public CollectivityRepository(Connection connection, MemberRepository memberRepository) {
+    public CollectivityRepository(Connection connection, MemberRepository memberRepository, CollectivityMembershipRepository membershipRepository) {
         this.connection = connection;
         this.memberRepository = memberRepository;
+        this.membershipRepository = membershipRepository;
     }
 
     public Collectivity findById(String id) {
@@ -32,7 +32,10 @@ public class CollectivityRepository {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return mapResultSetToCollectivity(rs);
+                    Collectivity collectivity = mapResultSetToCollectivity(rs);
+                    collectivity.setMembers(membershipRepository.findActiveMembersByCollectivity(id));
+                    collectivity.setStructure(getStructure(id));
+                    return collectivity;
                 }
             }
         } catch (SQLException e) {
@@ -105,20 +108,50 @@ public class CollectivityRepository {
         return collectivities;
     }
 
-    public Collectivity create(Collectivity collectivity) {
-        String sql = "INSERT INTO collectivity (id, location, agricultural_specialty, federation_id) " +
-                     "VALUES (?::uuid, ?, ?, (SELECT id FROM federation LIMIT 1)) RETURNING id";
+    public List<Collectivity> findByIds(List<String> ids) {
+        List<Collectivity> collectivities = new ArrayList<>();
+        if (ids == null || ids.isEmpty()) {
+            return collectivities;
+        }
+        String placeholders = String.join(",", java.util.Collections.nCopies(ids.size(), "?::uuid"));
+        String sql = "SELECT id, number, name, location, agricultural_specialty, created_at " +
+                   "FROM collectivity WHERE id IN (" + placeholders + ")";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            String id = UUID.randomUUID().toString();
-            collectivity.setId(id);
-            ps.setString(1, id);
-            ps.setString(2, collectivity.getLocation());
-            ps.setString(3, collectivity.getAgriculturalSpecialty());
-            ps.executeUpdate();
-            return collectivity;
+            for (int i = 0; i < ids.size(); i++) {
+                ps.setString(i + 1, ids.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Collectivity collectivity = mapResultSetToCollectivity(rs);
+                    collectivity.setMembers(membershipRepository.findActiveMembersByCollectivity(collectivity.getId()));
+                    collectivity.setStructure(getStructure(collectivity.getId()));
+                    collectivities.add(collectivity);
+                }
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        return collectivities;
+    }
+
+    public List<Collectivity> create(List<Collectivity> collectivities) {
+        List<Collectivity> created = new ArrayList<>();
+        String sql = "INSERT INTO collectivity (id, location, agricultural_specialty, federation_id) " +
+                "VALUES (?::uuid, ?, ?, (SELECT id FROM federation LIMIT 1))";
+        for (Collectivity collectivity : collectivities) {
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                String id = UUID.randomUUID().toString();
+                collectivity.setId(id);
+                ps.setString(1, id);
+                ps.setString(2, collectivity.getLocation());
+                ps.setString(3, collectivity.getAgriculturalSpecialty());
+                ps.executeUpdate();
+                created.add(collectivity);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return created;
     }
 
     public void updateIdentity(String id, Integer number, String name) {
@@ -168,6 +201,36 @@ public class CollectivityRepository {
             throw new RuntimeException(e);
         }
         return 0;
+    }
+
+    public void saveStructure(String collectivityId, CollectivityStructure structure) {
+        if (structure.getPresident() != null) {
+            saveMandate(collectivityId, structure.getPresident().getId(), "PRESIDENT");
+        }
+        if (structure.getVicePresident() != null) {
+            saveMandate(collectivityId, structure.getVicePresident().getId(), "VICE_PRESIDENT");
+        }
+        if (structure.getTreasurer() != null) {
+            saveMandate(collectivityId, structure.getTreasurer().getId(), "TREASURER");
+        }
+        if (structure.getSecretary() != null) {
+            saveMandate(collectivityId, structure.getSecretary().getId(), "SECRETARY");
+        }
+    }
+
+    private void saveMandate(String collectivityId, String memberId, String occupation) {
+        String sql = "INSERT INTO collectivity_mandate (id, collectivity_id, member_id, occupation, date) " +
+                    "VALUES (?::uuid, ?::uuid, ?::uuid, ?::member_occupation, ?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, UUID.randomUUID().toString());
+            ps.setString(2, collectivityId);
+            ps.setString(3, memberId);
+            ps.setString(4, occupation);
+            ps.setDate(5, java.sql.Date.valueOf(java.time.LocalDate.now()));
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public CollectivityStructure getStructure(String collectivityId) {
