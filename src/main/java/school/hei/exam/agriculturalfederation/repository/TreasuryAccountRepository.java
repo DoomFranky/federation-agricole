@@ -46,6 +46,31 @@ public class TreasuryAccountRepository {
         return accounts;
     }
 
+    public List<TreasuryAccount> findByCollectivityAtDate(String collectivityId, LocalDate atDate) {
+        List<TreasuryAccount> accounts = new ArrayList<>();
+        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE collectivity_id = ?::uuid AND as_of_date <= ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, collectivityId);
+            ps.setDate(2, Date.valueOf(atDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    TreasuryAccount acc = TreasuryAccount.builder()
+                        .id(rs.getString("id"))
+                        .collectivityId(rs.getString("collectivity_id"))
+                        .accountType(TreasuryAccount.AccountType.valueOf(rs.getString("account_type")))
+                        .balanceMga(rs.getBigDecimal("balance_mga"))
+                        .asOfDate(rs.getDate("as_of_date").toLocalDate())
+                        .currency("MGA")
+                        .build();
+                    accounts.add(acc);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return accounts;
+    }
+
     public TreasuryAccount create(TreasuryAccount account) {
         String sql = "INSERT INTO treasury_account (id, collectivity_id, account_type, balance_mga, as_of_date, currency) VALUES (?::uuid, ?::uuid, ?::account_type, ?, ?, 'MGA') RETURNING id";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {

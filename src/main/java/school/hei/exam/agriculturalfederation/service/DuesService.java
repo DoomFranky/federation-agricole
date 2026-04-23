@@ -71,7 +71,7 @@ public class DuesService {
             throw new BadRequestException("Frequency is required");
         }
         String freq = dto.frequency().toUpperCase();
-        if (!freq.equals("MONTHLY") && !freq.equals("ANNUAL") && !freq.equals("PUNCTUAL")) {
+        if (!freq.equals("MONTHLY") && !freq.equals("ANNUALLY") && !freq.equals("PUNCTUALLY") &&!freq.equals("WEEKLY")) {
             throw new BadRequestException("Invalid frequency: " + dto.frequency());
         }
         if (dto.amount() == null || dto.amount().compareTo(BigDecimal.ZERO) <= 0) {

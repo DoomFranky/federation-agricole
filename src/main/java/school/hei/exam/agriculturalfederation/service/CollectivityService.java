@@ -18,15 +18,13 @@ import school.hei.exam.agriculturalfederation.repository.MemberRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class CollectivityService {
-    private static final int MIN_MEMBERS = 10;
-    private static final int MEMBERS_WITH_SENIORITY = 5;
-    private static final int SENIORITY_DAYS = 180;
-    private static final int JUNIOR_TENURE_DAYS = 90;
+    private final int MIN_MEMBERS = 10;
+    private final int MEMBERS_WITH_SENIORITY = 5;
+    private final int SENIORITY_DAYS = 180;
 
     private final CollectivityRepository collectivityRepository;
     private final MemberRepository memberRepository;
@@ -42,32 +40,48 @@ public class CollectivityService {
         this.membershipRepository = membershipRepository;
     }
 
-    public Collectivity createCollectivity(InputCollectivityDTO dto) {
-        validateCollectivityCreation(dto);
+    public List<Collectivity> createCollectivity(List<InputCollectivityDTO> dto) {
+        List<Collectivity> transformedCollectivity = new ArrayList<>();
 
-        Collectivity collectivity = new Collectivity();
-        collectivity.setLocation(dto.location());
-        collectivity.setAgriculturalSpecialty(dto.specialization());
-        collectivity.setCreatedAt(LocalDate.now());
+        for (InputCollectivityDTO d : dto) {
+            validateCollectivityCreation(d);
+        }
 
-        collectivity = collectivityRepository.create(collectivity);
+        for (InputCollectivityDTO d : dto) {
+            Collectivity collectivity = new Collectivity();
+            collectivity.setLocation(d.location());
+            collectivity.setAgriculturalSpecialty(d.specialization());
+            collectivity.setCreatedAt(LocalDate.now());
+            transformedCollectivity.add(collectivity);
+        }
 
-        if (dto.members() != null && !dto.members().isEmpty()) {
-            for (String memberId : dto.members()) {
-                membershipRepository.createMembership(
-                    memberId, 
-                    collectivity.getId(), 
-                    OccupationEnum.JUNIOR,
-                    UUID.randomUUID()
-                );
+        List<Collectivity> created = collectivityRepository.create(transformedCollectivity);
+
+        for (int i = 0; i < dto.size(); i++) {
+            InputCollectivityDTO d = dto.get(i);
+            Collectivity collectivity = created.get(i);
+
+            if (d.members() != null && !d.members().isEmpty()) {
+                for (String memberId : d.members()) {
+                    membershipRepository.createMembership(
+                            memberId,
+                            collectivity.getId(),
+                            OccupationEnum.JUNIOR
+                    );
+                }
+            }
+
+            if (d.structure() != null) {
+                if (!structureHasAllPositions(d.structure())) {
+                    throw new BadRequestException("All specific posts (president, vice president, treasurer, secretary) must be filled");
+                }
+                assignStructure(collectivity.getId(), d.structure());
             }
         }
 
-        if (dto.structure() != null) {
-            assignStructure(collectivity.getId(), dto.structure());
-        }
-
-        return collectivityRepository.findById(collectivity.getId());
+        return collectivityRepository.findByIds(created.stream()
+                .map(Collectivity::getId)
+                .collect(Collectors.toList()));
     }
 
     private void validateCollectivityCreation(InputCollectivityDTO dto) {
@@ -77,23 +91,18 @@ public class CollectivityService {
         if (dto.location() == null || dto.location().isBlank()) {
             throw new BadRequestException("Location is required");
         }
-        if (dto.specialization() == null || dto.specialization().isBlank()) {
-            throw new BadRequestException("Agricultural specialty is required");
-        }
-
         if (dto.members() != null && dto.members().size() < MIN_MEMBERS) {
             throw new BadRequestException(
                 "At least " + MIN_MEMBERS + " members are required to create a collectivity. " +
                 "Provided: " + dto.members().size()
             );
         }
-
         if (dto.members() != null) {
             int seniorMembers = 0;
-            for (String memberId : dto.members()) {
                 List<String> seniorIds = membershipRepository.findConfirmedMemberIdsWithMinTenure(
                     null, SENIORITY_DAYS
                 );
+            for (String memberId : dto.members()) {
                 if (seniorIds.contains(memberId)) {
                     seniorMembers++;
                 }
@@ -112,7 +121,13 @@ public class CollectivityService {
 
     private void validateStructure(CollectivityStructureDTO structure) {
         if (structure == null) {
-            throw new BadRequestException("Structure (specific posts) is required");
+            return;
+        }
+
+        if (!structureHasAllPositions(structure)) {
+            throw new BadRequestException(
+                "All specific posts (president, vice president, treasurer, secretary) must be filled"
+            );
         }
 
         List<String> requiredPosts = List.of(
@@ -121,16 +136,6 @@ public class CollectivityService {
             structure.treasurer(),
             structure.secretary()
         );
-
-        long filledPosts = requiredPosts.stream()
-            .filter(p -> p != null && !p.isBlank())
-            .count();
-
-        if (filledPosts < 4) {
-            throw new BadRequestException(
-                "All specific posts (president, vice president, treasurer, secretary) must be filled"
-            );
-        }
 
         List<String> distinctPosts = requiredPosts.stream()
             .filter(p -> p != null && !p.isBlank())
@@ -142,6 +147,13 @@ public class CollectivityService {
                 "Each specific post must be occupied by a different member"
             );
         }
+    }
+
+    private boolean structureHasAllPositions(CollectivityStructureDTO structure) {
+        return structure.president() != null && !structure.president().isBlank()
+            && structure.vicePresident() != null && !structure.vicePresident().isBlank()
+            && structure.treasurer() != null && !structure.treasurer().isBlank()
+            && structure.secretary() != null && !structure.secretary().isBlank();
     }
 
     public void assignIdentity(String collectivityId, IdentityCollectivityDTO identity) {
@@ -184,7 +196,7 @@ public class CollectivityService {
 
     private void assignStructure(String collectivityId, CollectivityStructureDTO structure) {
         CollectivityStructure cs = new CollectivityStructure();
-        
+
         if (structure.president() != null) {
             Member president = memberRepository.findById(structure.president());
             if (president != null) cs.setPresident(president);
@@ -200,6 +212,11 @@ public class CollectivityService {
         if (structure.secretary() != null) {
             Member secretary = memberRepository.findById(structure.secretary());
             if (secretary != null) cs.setSecretary(secretary);
+        }
+
+        if (cs.getPresident() != null || cs.getVicePresident() != null
+            || cs.getTreasurer() != null || cs.getSecretary() != null) {
+            collectivityRepository.saveStructure(collectivityId, cs);
         }
     }
 }
