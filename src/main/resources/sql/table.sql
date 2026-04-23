@@ -23,7 +23,8 @@ CREATE TYPE payment_method AS ENUM (
 
 CREATE TYPE dues_frequency AS ENUM (
     'MONTHLY',
-    'ANNUAL',
+    'ANNUALLY',
+    'WEEKLY'
     'PUNCTUAL'
     );
 
@@ -138,7 +139,7 @@ CREATE TABLE membership_referee (
                                     referee_member_id       UUID NOT NULL REFERENCES member(id),
     -- collectivity of the referee at the time of application (denormalised for rule check)
                                     referee_collectivity_id UUID NOT NULL REFERENCES collectivity(id),
-                                    relationship_nature     TEXT NOT NULL,             -- e.g. 'family', 'friend', 'colleague'
+                                    relationship_nature     TEXT,             -- e.g. 'family', 'friend', 'colleague'
 
                                     UNIQUE (membership_id, referee_member_id)
 );

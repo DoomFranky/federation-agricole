@@ -23,6 +23,6 @@ public class DuesRule {
     private boolean active;
 
     public enum DuesFrequency {
-        MONTHLY, ANNUAL, PUNCTUAL
+        MONTHLY, ANNUALLY, WEEKLY, PUNCTUALLY
     }
 }
