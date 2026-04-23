@@ -62,6 +62,25 @@ paths:
           description: Either given number or name is already used by other collectivity.
         404:
           description: Collectivity not found.
+  '/collectivities/{id}':
+    get:
+      summary: Get collectivity by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Collectivity details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collectivity'
+        404:
+          description: Collectivity not found.
+
   '/collectivities/{id}/membershipFees':
     get:
       summary: Retrieve collectivity membership fees
