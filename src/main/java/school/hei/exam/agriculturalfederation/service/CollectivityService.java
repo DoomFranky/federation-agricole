@@ -66,7 +66,8 @@ public class CollectivityService {
                     membershipRepository.createMembership(
                             memberId,
                             collectivity.getId(),
-                            OccupationEnum.JUNIOR
+                            OccupationEnum.JUNIOR,
+                            java.util.UUID.randomUUID()
                     );
                 }
             }

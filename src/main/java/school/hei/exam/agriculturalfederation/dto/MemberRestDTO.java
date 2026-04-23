@@ -2,6 +2,7 @@ package school.hei.exam.agriculturalfederation.dto;
 
 import java.time.LocalDate;
 import java.util.List;
+import school.hei.exam.agriculturalfederation.entity.Member;
 
 public class MemberRestDTO {
     private String id;
@@ -14,13 +15,13 @@ public class MemberRestDTO {
     private String phoneNumber;
     private String email;
     private String occupation;
-    private List<String> referees;
+    private List<Member> referees;
 
     public MemberRestDTO() {}
 
     public MemberRestDTO(String id, String firstName, String lastName, LocalDate birthDate,
             String gender, String address, String profession, String phoneNumber,
-            String email, String occupation, List<String> referees) {
+            String email, String occupation, List<Member> referees) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -54,7 +55,7 @@ public class MemberRestDTO {
     public void setEmail(String email) { this.email = email; }
     public String getOccupation() { return occupation; }
     public void setOccupation(String occupation) { this.occupation = occupation; }
-    public List<String> getReferees() { return referees; }
-    public void setReferees(List<String> referees) { this.referees = referees; }
+    public List<Member> getReferees() { return referees; }
+    public void setReferees(List<Member> referees) { this.referees = referees; }
 
 }

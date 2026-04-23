@@ -37,10 +37,9 @@ public class MemberService {
     }
 
     public List<MemberRestDTO> createMember(List<CreateMemberDTO> dto) {
-    List<MemberRestDTO> listOfMember = new ArrayList<>(); 
-    List<UUID> uuids = new ArrayList<>();
-    UUID uuid;
-    for (CreateMemberDTO createMemberDTO : dto) {
+        List<MemberRestDTO> listOfMember = new ArrayList<>();
+
+        for (CreateMemberDTO createMemberDTO : dto) {
             createMemberDTO.setInformation(
                 new MemberInformationDTO(
                     createMemberDTO.getFirstName(),
@@ -56,21 +55,28 @@ public class MemberService {
             );
 
             validateCreateMemberInput(createMemberDTO);
-            uuid  = UUID.randomUUID();
-            Member newMember = createMemberEntity(createMemberDTO.getInformation(),uuid);
+
+            if (collectivityRepository.findById(createMemberDTO.getCollectivityIdentifier()) == null) {
+                throw new NotFoundException("Collectivity not found: " + createMemberDTO.getCollectivityIdentifier());
+            }
+
+            List<RefereeInfo> refereeInfos = buildRefereeInfos(createMemberDTO.getReferees(), createMemberDTO.getCollectivityIdentifier());
+            validateReferees(refereeInfos);
+
+            UUID uuid = UUID.randomUUID();
+            Member newMember = createMemberEntity(createMemberDTO.getInformation(), uuid);
+
             UUID memberShipUUID = UUID.randomUUID();
             membershipRepository.createMembership(
-                newMember.getId(), 
-                createMemberDTO.getCollectivityIdentifier(), 
+                newMember.getId(),
+                createMemberDTO.getCollectivityIdentifier(),
                 OccupationEnum.JUNIOR,
                 memberShipUUID
             );
             String membershipId = memberShipUUID.toString();
 
-            List<RefereeInfo> refereeInfos = buildRefereeInfos(createMemberDTO.getReferees(), createMemberDTO.getCollectivityIdentifier());
-            validateReferees(refereeInfos);
             membershipRepository.addReferees(membershipId, refereeInfos);
-            
+
             List<Member> refereeMembers = new ArrayList<>();
             for (var ref : refereeInfos) {
                 Member referee = memberRepository.findById(ref.memberId());
@@ -79,21 +85,20 @@ public class MemberService {
                 }
             }
             listOfMember.add(
-            new MemberRestDTO(
-                newMember.getId(),
-                newMember.getFirstName(),
-                newMember.getLastName(),
-                newMember.getBirthDate(),
-                newMember.getGender().name(),
-                newMember.getAddress(),
-                newMember.getProfession(),
-                newMember.getPhoneNumber(),
-                newMember.getEmail(),
-                newMember.getOccupation().name(),
-                buildRefereeDTOs(refereeMembers, refereeInfos)
-            )
+                new MemberRestDTO(
+                    newMember.getId(),
+                    newMember.getFirstName(),
+                    newMember.getLastName(),
+                    newMember.getBirthDate(),
+                    newMember.getGender().name(),
+                    newMember.getAddress(),
+                    newMember.getProfession(),
+                    newMember.getPhoneNumber(),
+                    newMember.getEmail(),
+                    newMember.getOccupation().name(),
+                    buildRefereeDTOs(refereeMembers)
+                )
             );
-            uuids.add(uuid);
         }
         return listOfMember;
     }
@@ -109,7 +114,10 @@ public class MemberService {
             throw new BadRequestException("At least " + MIN_REFEREES + " referees are required");
         }
         if (dto.getRegistrationFeePaid() == null || !dto.getRegistrationFeePaid()) {
-            throw new BadRequestException("Registration fee of 50000 MGA must be paid");
+            throw new BadRequestException("Registration fee must be paid");
+        }
+        if (dto.getMembershipDuesPaid() == null || !dto.getMembershipDuesPaid()) {
+            throw new BadRequestException("Membership dues must be paid");
         }
     }
 
@@ -161,15 +169,8 @@ public class MemberService {
         return memberRepository.findById(uuid.toString());
     }
 
-    private List<String> buildRefereeDTOs(
-            List<Member> members, List<RefereeInfo> infos) {
-        List<String> dtos = new ArrayList<>();
-        for (int i = 0; i < members.size(); i++) {
-            Member ref = members.get(i);
-            String relation = null;
-            dtos.add(ref.getId());//(new RefereeDTO(ref.getId(), relation));
-        }
-        return dtos;
+    private List<Member> buildRefereeDTOs(List<Member> members) {
+        return members;
     }
 
     public Member getMemberById(String id) {
