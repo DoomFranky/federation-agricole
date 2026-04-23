@@ -106,6 +106,29 @@ public class CollectivityMembershipRepository {
         return members;
     }
 
+    public String findActiveMembershipId(String memberId, String collectivityId) {
+        String sql;
+        if (collectivityId != null) {
+            sql = "SELECT id FROM collectivity_membership WHERE member_id = ?::uuid AND collectivity_id = ?::uuid AND left_at IS NULL";
+        } else {
+            sql = "SELECT id FROM collectivity_membership WHERE member_id = ?::uuid AND left_at IS NULL LIMIT 1";
+        }
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, memberId);
+            if (collectivityId != null) {
+                ps.setString(2, collectivityId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("id");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
     public List<String> findConfirmedMemberIdsWithMinTenure(String collectivityId, int daysMinTenure) {
         List<String> memberIds = new ArrayList<>();
         String sql;

@@ -23,6 +23,21 @@ public class DuesRuleRepository {
         this.connection = connection;
     }
 
+    public DuesRule findById(String id) {
+        String sql = "SELECT id, collectivity_id, frequency, amount_mga, label, effective_from, effective_to FROM dues_rule WHERE id = ?::uuid";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToDuesRule(rs, true);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
     public List<DuesRule> findActiveByCollectivity(String collectivityId) {
         List<DuesRule> rules = new ArrayList<>();
         String sql = """

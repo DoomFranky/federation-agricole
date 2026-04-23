@@ -9,6 +9,9 @@ import school.hei.exam.agriculturalfederation.entity.TreasuryAccount;
 import school.hei.exam.agriculturalfederation.exception.BadRequestException;
 import school.hei.exam.agriculturalfederation.exception.NotFoundException;
 import school.hei.exam.agriculturalfederation.repository.CollectivityMembershipRepository;
+import school.hei.exam.agriculturalfederation.repository.CollectivityRepository;
+import school.hei.exam.agriculturalfederation.repository.DuesRuleRepository;
+import school.hei.exam.agriculturalfederation.repository.MemberRepository;
 import school.hei.exam.agriculturalfederation.repository.PaymentReceiptRepository;
 import school.hei.exam.agriculturalfederation.repository.TreasuryAccountRepository;
 
@@ -22,25 +25,72 @@ public class PaymentService {
     private final PaymentReceiptRepository paymentRepository;
     private final TreasuryAccountRepository accountRepository;
     private final CollectivityMembershipRepository membershipRepository;
+    private final MemberRepository memberRepository;
+    private final DuesRuleRepository duesRuleRepository;
+    private final CollectivityRepository collectivityRepository;
 
     public PaymentService(
             PaymentReceiptRepository paymentRepository,
             TreasuryAccountRepository accountRepository,
-            CollectivityMembershipRepository membershipRepository
+            CollectivityMembershipRepository membershipRepository,
+            MemberRepository memberRepository,
+            DuesRuleRepository duesRuleRepository,
+            CollectivityRepository collectivityRepository
     ) {
         this.paymentRepository = paymentRepository;
         this.accountRepository = accountRepository;
         this.membershipRepository = membershipRepository;
+        this.memberRepository = memberRepository;
+        this.duesRuleRepository = duesRuleRepository;
+        this.collectivityRepository = collectivityRepository;
     }
 
-    public List<MemberPaymentDTO> createPayments(String membershipId, List<CreateMemberPaymentDTO> dtos) {
+    public List<MemberPaymentDTO> createPayments(String memberId, List<CreateMemberPaymentDTO> dtos) {
+        if (memberRepository.findById(memberId) == null) {
+            throw new NotFoundException("Member not found: " + memberId);
+        }
+
+        String membershipId = membershipRepository.findActiveMembershipId(memberId, null);
+        if (membershipId == null) {
+            throw new NotFoundException("No active membership found for member: " + memberId);
+        }
+
         return dtos.stream()
-            .map(dto -> createPayment(membershipId, dto))
+            .map(dto -> createPayment(memberId, membershipId, dto))
             .collect(Collectors.toList());
     }
 
-    private MemberPaymentDTO createPayment(String membershipId, CreateMemberPaymentDTO dto) {
+    private String resolveCollectivityId(String collectivityIdentifier) {
+        var collectivity = collectivityRepository.findById(collectivityIdentifier);
+        if (collectivity == null) {
+            try {
+                collectivity = collectivityRepository.findByNumber(Integer.parseInt(collectivityIdentifier));
+            } catch (NumberFormatException e) {
+                // Not a number, try by name
+            }
+        }
+        if (collectivity == null) {
+            collectivity = collectivityRepository.findByName(collectivityIdentifier);
+        }
+        if (collectivity == null) {
+            return null;
+        }
+        return collectivity.getId();
+    }
+
+    private MemberPaymentDTO createPayment(String memberId, String membershipId, CreateMemberPaymentDTO dto) {
         validatePayment(dto);
+
+        if (dto.collectivityId() != null) {
+            String resolvedCollectivityId = resolveCollectivityId(dto.collectivityId());
+            if (resolvedCollectivityId == null) {
+                throw new NotFoundException("Collectivity not found: " + dto.collectivityId());
+            }
+            membershipId = membershipRepository.findActiveMembershipId(memberId, resolvedCollectivityId);
+            if (membershipId == null) {
+                throw new NotFoundException("No active membership found for member in specified collectivity");
+            }
+        }
 
         PaymentReceipt receipt = PaymentReceipt.builder()
             .membershipId(membershipId)
@@ -94,12 +144,11 @@ public class PaymentService {
         if (!mode.equals("CASH") && !mode.equals("MOBILE_BANKING") && !mode.equals("BANK_TRANSFER")) {
             throw new BadRequestException("Invalid payment mode: " + dto.paymentMode());
         }
+        if (dto.membershipFeeIdentifier() == null || dto.membershipFeeIdentifier().isBlank()) {
+            throw new BadRequestException("Membership fee identifier is required");
+        }
         if (dto.accountCreditedIdentifier() == null || dto.accountCreditedIdentifier().isBlank()) {
             throw new BadRequestException("Account credited is required");
-        }
-        TreasuryAccount acc = accountRepository.findById(dto.accountCreditedIdentifier());
-        if (acc == null) {
-            throw new NotFoundException("Account not found");
         }
     }
 
