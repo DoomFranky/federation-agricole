@@ -62,11 +62,15 @@ public class CollectivityService {
             Collectivity collectivity = created.get(i);
 
             if (d.members() != null && !d.members().isEmpty()) {
+                List<String> structureMemberIds = getStructureMemberIds(d.structure());
                 for (String memberId : d.members()) {
+                    OccupationEnum occupation = structureMemberIds.contains(memberId)
+                        ? getOccupationForStructureMember(d.structure(), memberId)
+                        : OccupationEnum.JUNIOR;
                     membershipRepository.createMembership(
                             memberId,
                             collectivity.getId(),
-                            OccupationEnum.JUNIOR,
+                            occupation,
                             java.util.UUID.randomUUID()
                     );
                 }
@@ -238,5 +242,27 @@ public class CollectivityService {
                 "Member " + memberId + " already has 2 mandates for position " + occupation + " in collectivity " + collectivityId
             );
         }
+    }
+
+    private List<String> getStructureMemberIds(CollectivityStructureDTO structure) {
+        if (structure == null) {
+            return List.of();
+        }
+        return List.of(
+            structure.president(),
+            structure.vicePresident(),
+            structure.treasurer(),
+            structure.secretary()
+        ).stream()
+            .filter(id -> id != null && !id.isBlank())
+            .collect(Collectors.toList());
+    }
+
+    private OccupationEnum getOccupationForStructureMember(CollectivityStructureDTO structure, String memberId) {
+        if (memberId.equals(structure.president())) return OccupationEnum.PRESIDENT;
+        if (memberId.equals(structure.vicePresident())) return OccupationEnum.VICE_PRESIDENT;
+        if (memberId.equals(structure.treasurer())) return OccupationEnum.TREASURER;
+        if (memberId.equals(structure.secretary())) return OccupationEnum.SECRETARY;
+        return OccupationEnum.SENIOR;
     }
 }

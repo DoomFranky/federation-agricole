@@ -134,35 +134,26 @@ public class CollectivityMembershipRepository {
 
     public List<String> findConfirmedMemberIdsWithMinTenure(String collectivityId, int daysMinTenure) {
         List<String> memberIds = new ArrayList<>();
+        String baseSql = "SELECT cm.member_id " +
+                "FROM collectivity_membership cm " +
+                "WHERE cm.occupation = 'SENIOR' " +
+                "AND cm.joined_at <= CURRENT_DATE - INTERVAL '1 day' * ? " +
+                "AND cm.left_at IS NULL";
+
         String sql;
-        if (collectivityId != null)
-        {
-            sql = "SELECT cm.member_id " +
-                    "FROM collectivity_membership cm " +
-                    "WHERE cm.collectivity_id = ? " +
-                    "AND cm.joined_at <= CURRENT_DATE - INTERVAL '1 day' * ? " +
-                    "AND cm.left_at IS NULL";
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                ps.setString(1, collectivityId);
-                ps.setInt(2, daysMinTenure);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        memberIds.add(rs.getString("member_id"));
-                    }
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-            return memberIds;
+        if (collectivityId != null) {
+            sql = baseSql + " AND cm.collectivity_id = ?";
+        } else {
+            sql = baseSql;
         }
-        else{
-            sql = "SELECT cm.member_id " +
-                    "FROM collectivity_membership cm " +
-                    "WHERE cm.joined_at <= CURRENT_DATE - INTERVAL '1 day' * ? " +
-                    "AND cm.left_at IS NULL";
-        }
+
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, daysMinTenure);
+            if (collectivityId != null) {
+                ps.setInt(1, daysMinTenure);
+                ps.setString(2, collectivityId);
+            } else {
+                ps.setInt(1, daysMinTenure);
+            }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     memberIds.add(rs.getString("member_id"));
