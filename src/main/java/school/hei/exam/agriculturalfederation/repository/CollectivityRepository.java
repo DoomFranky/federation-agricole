@@ -28,7 +28,7 @@ public class CollectivityRepository {
 
     public Collectivity findById(String id) {
         String sql = "SELECT id, number, name, location, agricultural_specialty, created_at " +
-                   "FROM collectivity WHERE id = ?::uuid";
+                   "FROM collectivity WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -114,7 +114,7 @@ public class CollectivityRepository {
         if (ids == null || ids.isEmpty()) {
             return collectivities;
         }
-        String placeholders = String.join(",", java.util.Collections.nCopies(ids.size(), "?::uuid"));
+        String placeholders = String.join(",", java.util.Collections.nCopies(ids.size(), "?"));
         String sql = "SELECT id, number, name, location, agricultural_specialty, created_at " +
                    "FROM collectivity WHERE id IN (" + placeholders + ")";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -138,11 +138,14 @@ public class CollectivityRepository {
     public List<Collectivity> create(List<Collectivity> collectivities) {
         List<Collectivity> created = new ArrayList<>();
         String sql = "INSERT INTO collectivity (id, location, agricultural_specialty, federation_id) " +
-                "VALUES (?::uuid, ?, ?, (SELECT id FROM federation LIMIT 1))";
+                "VALUES (?, ?, ?, (SELECT id FROM federation LIMIT 1))";
         for (Collectivity collectivity : collectivities) {
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                String id = UUID.randomUUID().toString();
-                collectivity.setId(id);
+                String id = collectivity.getId();
+                if (id == null || id.isBlank()) {
+                    id = UUID.randomUUID().toString();
+                    collectivity.setId(id);
+                }
                 ps.setString(1, id);
                 ps.setString(2, collectivity.getLocation());
                 ps.setString(3, collectivity.getAgriculturalSpecialty());
@@ -156,7 +159,7 @@ public class CollectivityRepository {
     }
 
     public void updateIdentity(String id, Integer number, String name) {
-        String sql = "UPDATE collectivity SET number = ?, name = ? WHERE id = ?::uuid";
+        String sql = "UPDATE collectivity SET number = ?, name = ? WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setObject(1, number);
             ps.setString(2, name);
@@ -171,7 +174,7 @@ public class CollectivityRepository {
     }
 
     public int countActiveMembers(String collectivityId) {
-        String sql = "SELECT COUNT(*) FROM collectivity_membership WHERE collectivity_id = ?::uuid AND left_at IS NULL";
+        String sql = "SELECT COUNT(*) FROM collectivity_membership WHERE collectivity_id = ? AND left_at IS NULL";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, collectivityId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -187,7 +190,7 @@ public class CollectivityRepository {
 
     public int countMembersWithMinTenure(String collectivityId, int daysMinTenure) {
         String sql = "SELECT COUNT(*) FROM collectivity_membership " +
-                  "WHERE collectivity_id = ?::uuid " +
+                  "WHERE collectivity_id = ? " +
                   "AND joined_at <= CURRENT_DATE - INTERVAL '1 day' * ? " +
                   "AND left_at IS NULL";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -221,9 +224,10 @@ public class CollectivityRepository {
 
     private void saveMandate(String collectivityId, String memberId, String occupation) {
         String sql = "INSERT INTO collectivity_mandate (id, collectivity_id, member_id, occupation, date) " +
-                    "VALUES (?::uuid, ?::uuid, ?::uuid, ?::member_occupation, ?)";
+                    "VALUES (?, ?, ?, ?::member_occupation, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, UUID.randomUUID().toString());
+            String id = UUID.randomUUID().toString();
+            ps.setString(1, id);
             ps.setString(2, collectivityId);
             ps.setString(3, memberId);
             ps.setString(4, occupation);
@@ -238,7 +242,7 @@ public class CollectivityRepository {
         CollectivityStructure structure = new CollectivityStructure();
         String sql = "SELECT cm.member_id, cm.occupation " +
                   "FROM collectivity_mandate cm " +
-                  "WHERE cm.collectivity_id = ?::uuid " +
+                  "WHERE cm.collectivity_id = ? " +
                   "ORDER BY cm.date DESC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, collectivityId);
