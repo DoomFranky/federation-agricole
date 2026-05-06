@@ -4,7 +4,6 @@ import org.springframework.stereotype.Repository;
 
 import school.hei.exam.agriculturalfederation.entity.DuesRule;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import school.hei.exam.agriculturalfederation.dto.CreateMemberPaymentDTO;
 import school.hei.exam.agriculturalfederation.dto.FinancialAccountDTO;
 import school.hei.exam.agriculturalfederation.dto.MemberPaymentDTO;
+import school.hei.exam.agriculturalfederation.entity.AccountType;
 import school.hei.exam.agriculturalfederation.entity.PaymentReceipt;
 import school.hei.exam.agriculturalfederation.entity.TreasuryAccount;
 import school.hei.exam.agriculturalfederation.exception.BadRequestException;
@@ -103,7 +104,7 @@ public class PaymentService {
             throw new BadRequestException("Membership fee not found: " + dto.membershipFeeIdentifier());
         }
 
-        TreasuryAccount.AccountType expectedType = paymentModeToAccountType(dto.paymentMode());
+        AccountType expectedType = paymentModeToAccountType(dto.paymentMode());
         if (account.getAccountType() != expectedType) {
             throw new BadRequestException(
                 "Payment mode " + dto.paymentMode() + " requires account type " + expectedType +
@@ -141,12 +142,12 @@ public class PaymentService {
         );
     }
 
-    private TreasuryAccount.AccountType paymentModeToAccountType(String paymentMode) {
+    private AccountType paymentModeToAccountType(String paymentMode) {
         String mode = paymentMode.toUpperCase();
         return switch (mode) {
-            case "CASH" -> TreasuryAccount.AccountType.CASH;
-            case "BANK_TRANSFER" -> TreasuryAccount.AccountType.BANK;
-            case "MOBILE_BANKING" -> TreasuryAccount.AccountType.MOBILE_MONEY;
+            case "CASH" -> AccountType.CASH;
+            case "BANK_TRANSFER" -> AccountType.BANK;
+            case "MOBILE_BANKING" -> AccountType.MOBILE_MONEY;
             default -> throw new BadRequestException("Invalid payment mode: " + paymentMode);
         };
     }

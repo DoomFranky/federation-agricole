@@ -1,6 +1,12 @@
 package school.hei.exam.agriculturalfederation.repository;
 
 import org.springframework.stereotype.Repository;
+
+import school.hei.exam.agriculturalfederation.entity.AccountType;
+import school.hei.exam.agriculturalfederation.entity.BankAccountDetail;
+import school.hei.exam.agriculturalfederation.entity.BankName;
+import school.hei.exam.agriculturalfederation.entity.MobileMoneyAccountDetail;
+import school.hei.exam.agriculturalfederation.entity.MobileMoneyProvider;
 import school.hei.exam.agriculturalfederation.entity.TreasuryAccount;
 
 import java.math.BigDecimal;
@@ -145,7 +151,7 @@ public class TreasuryAccountRepository {
         return null;
     }
 
-    public TreasuryAccount findByCollectivityAndType(String collectivityId, TreasuryAccount.AccountType accountType) {
+    public TreasuryAccount findByCollectivityAndType(String collectivityId, AccountType accountType) {
         String sql = """
             SELECT ta.id, ta.collectivity_id, ta.account_type, ta.balance_mga, ta.as_of_date,
                    ba.account_holder_name, ba.bank_name, ba.bank_code, ba.branch_code, ba.account_number, ba.rib_key,
@@ -175,19 +181,19 @@ public class TreasuryAccountRepository {
         TreasuryAccount.TreasuryAccountBuilder builder = TreasuryAccount.builder()
             .id(rs.getString("id"))
             .collectivityId(rs.getString("collectivity_id"))
-            .accountType(TreasuryAccount.AccountType.valueOf(rs.getString("account_type")))
+            .accountType(AccountType.valueOf(rs.getString("account_type")))
             .balanceMga(rs.getBigDecimal("balance_mga"))
             .asOfDate(rs.getDate("as_of_date").toLocalDate())
             .currency("MGA");
 
-        TreasuryAccount.AccountType type = TreasuryAccount.AccountType.valueOf(rs.getString("account_type"));
+        AccountType type = AccountType.valueOf(rs.getString("account_type"));
 
-        if (type == TreasuryAccount.AccountType.BANK) {
+        if (type == AccountType.BANK) {
             String bankHolderName = rs.getString("account_holder_name");
             String bankNameStr = rs.getString("bank_name");
             if (bankHolderName != null || bankNameStr != null) {
-                TreasuryAccount.BankName bankName = bankNameStr != null ? TreasuryAccount.BankName.valueOf(bankNameStr) : null;
-                builder.bankAccountDetail(TreasuryAccount.BankAccountDetail.builder()
+                BankName bankName = bankNameStr != null ? BankName.valueOf(bankNameStr) : null;
+                builder.bankAccountDetail(BankAccountDetail.builder()
                     .accountHolderName(bankHolderName)
                     .bankName(bankName)
                     .bankCode(rs.getString("bank_code"))
@@ -196,12 +202,12 @@ public class TreasuryAccountRepository {
                     .ribKey(rs.getString("rib_key"))
                     .build());
             }
-        } else if (type == TreasuryAccount.AccountType.MOBILE_MONEY) {
+        } else if (type == AccountType.MOBILE_MONEY) {
             String mmHolderName = rs.getString("mm_holder_name");
             String providerStr = rs.getString("provider");
             if (mmHolderName != null || providerStr != null) {
-                TreasuryAccount.MobileMoneyProvider provider = providerStr != null ? TreasuryAccount.MobileMoneyProvider.valueOf(providerStr) : null;
-                builder.mobileMoneyAccountDetail(TreasuryAccount.MobileMoneyAccountDetail.builder()
+                MobileMoneyProvider provider = providerStr != null ? MobileMoneyProvider.valueOf(providerStr) : null;
+                builder.mobileMoneyAccountDetail(MobileMoneyAccountDetail.builder()
                     .accountHolderName(mmHolderName)
                     .provider(provider)
                     .phoneNumber(rs.getString("phone_number"))

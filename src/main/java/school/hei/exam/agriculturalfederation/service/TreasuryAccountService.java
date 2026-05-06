@@ -2,6 +2,7 @@ package school.hei.exam.agriculturalfederation.service;
 
 import org.springframework.stereotype.Service;
 import school.hei.exam.agriculturalfederation.dto.FinancialAccountDTO;
+import school.hei.exam.agriculturalfederation.entity.AccountType;
 import school.hei.exam.agriculturalfederation.entity.TreasuryAccount;
 import school.hei.exam.agriculturalfederation.exception.NotFoundException;
 import school.hei.exam.agriculturalfederation.repository.CollectivityRepository;
@@ -48,14 +49,14 @@ public class TreasuryAccountService {
         String mobileService = null;
         String mobileNumber = null;
 
-        if (account.getAccountType() == TreasuryAccount.AccountType.BANK && account.getBankAccountDetail() != null) {
+        if (account.getAccountType() == AccountType.BANK && account.getBankAccountDetail() != null) {
             holderName = account.getBankAccountDetail().getAccountHolderName();
             bankName = account.getBankAccountDetail().getBankName() != null ? account.getBankAccountDetail().getBankName().name() : null;
             bankCode = account.getBankAccountDetail().getBankCode();
             branchCode = account.getBankAccountDetail().getBranchCode();
             accountNumber = account.getBankAccountDetail().getAccountNumber();
             ribKey = account.getBankAccountDetail().getRibKey();
-        } else if (account.getAccountType() == TreasuryAccount.AccountType.MOBILE_MONEY && account.getMobileMoneyAccountDetail() != null) {
+        } else if (account.getAccountType() == AccountType.MOBILE_MONEY && account.getMobileMoneyAccountDetail() != null) {
             holderName = account.getMobileMoneyAccountDetail().getAccountHolderName();
             mobileService = account.getMobileMoneyAccountDetail().getProvider() != null ? account.getMobileMoneyAccountDetail().getProvider().name() : null;
             mobileNumber = account.getMobileMoneyAccountDetail().getPhoneNumber();

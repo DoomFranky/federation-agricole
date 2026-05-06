@@ -24,38 +24,4 @@ public class TreasuryAccount {
     private BankAccountDetail bankAccountDetail;
     private MobileMoneyAccountDetail mobileMoneyAccountDetail;
 
-    public enum AccountType {
-        CASH, BANK, MOBILE_MONEY
-    }
-
-    @Data
-    @Builder
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class BankAccountDetail {
-        private String accountHolderName;
-        private BankName bankName;
-        private String bankCode;
-        private String branchCode;
-        private String accountNumber;
-        private String ribKey;
-    }
-
-    @Data
-    @Builder
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class MobileMoneyAccountDetail {
-        private String accountHolderName;
-        private MobileMoneyProvider provider;
-        private String phoneNumber;
-    }
-
-    public enum BankName {
-        BRED, MCB, BMOI, BOA, BGFI, AFG, ACCES_BANQUE, BAOBAB, SIPEM
-    }
-
-    public enum MobileMoneyProvider {
-        ORANGE_MONEY, MVOLA, AIRTEL_MONEY
-    }
 }

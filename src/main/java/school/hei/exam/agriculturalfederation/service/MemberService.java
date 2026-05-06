@@ -21,8 +21,8 @@ import java.util.UUID;
 
 @Service
 public class MemberService {
-    private static final int MIN_REFEREES = 2;
-    private static final int REFEREE_MIN_TENURE_DAYS = 90;
+    private final int MIN_REFEREES = 2;
+    private final int REFEREE_MIN_TENURE_DAYS = 90;
 
     private final MemberRepository memberRepository;
     private final CollectivityRepository collectivityRepository;

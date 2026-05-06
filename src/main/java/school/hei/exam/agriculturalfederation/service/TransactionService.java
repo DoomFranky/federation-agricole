@@ -3,6 +3,7 @@ package school.hei.exam.agriculturalfederation.service;
 import org.springframework.stereotype.Service;
 import school.hei.exam.agriculturalfederation.dto.CollectivityTransactionDTO;
 import school.hei.exam.agriculturalfederation.dto.FinancialAccountDTO;
+import school.hei.exam.agriculturalfederation.entity.AccountType;
 import school.hei.exam.agriculturalfederation.entity.PaymentReceipt;
 import school.hei.exam.agriculturalfederation.entity.TreasuryAccount;
 import school.hei.exam.agriculturalfederation.exception.BadRequestException;
@@ -46,7 +47,7 @@ public class TransactionService {
             .map(receipt -> {
                 FinancialAccountDTO acc = null;
                 if (receipt.getMembershipId() != null) {
-                    TreasuryAccount.AccountType accountType = paymentMethodToAccountType(receipt.getPaymentMethod());
+                    AccountType accountType = paymentMethodToAccountType(receipt.getPaymentMethod());
                     TreasuryAccount ta = accountRepository.findByCollectivityAndType(collectivityId, accountType);
                     if (ta == null) {
                         ta = accountRepository.findByCollectivity(collectivityId).stream()
@@ -74,11 +75,11 @@ public class TransactionService {
             .collect(Collectors.toList());
     }
 
-    private TreasuryAccount.AccountType paymentMethodToAccountType(PaymentReceipt.PaymentMethod method) {
+    private AccountType paymentMethodToAccountType(PaymentReceipt.PaymentMethod method) {
         return switch (method) {
-            case CASH -> TreasuryAccount.AccountType.CASH;
-            case BANK_TRANSFER -> TreasuryAccount.AccountType.BANK;
-            case MOBILE_MONEY -> TreasuryAccount.AccountType.MOBILE_MONEY;
+            case CASH -> AccountType.CASH;
+            case BANK_TRANSFER -> AccountType.BANK;
+            case MOBILE_MONEY -> AccountType.MOBILE_MONEY;
         };
     }
 }

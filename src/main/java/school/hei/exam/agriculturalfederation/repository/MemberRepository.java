@@ -4,7 +4,6 @@ import org.springframework.stereotype.Repository;
 
 import school.hei.exam.agriculturalfederation.entity.GenderEnum;
 import school.hei.exam.agriculturalfederation.entity.Member;
-import school.hei.exam.agriculturalfederation.entity.MembershipReferee;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
 
 import java.sql.Connection;
@@ -12,7 +11,6 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -103,7 +101,6 @@ public class MemberRepository {
             try {
                 connection.rollback();
             } catch (SQLException e1) {
-                // TODO Auto-generated catch block
                 throw new RuntimeException(e1);
             }
             throw new RuntimeException(e);

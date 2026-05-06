@@ -2,7 +2,6 @@ package school.hei.exam.agriculturalfederation.repository;
 
 import org.springframework.stereotype.Repository;
 
-import school.hei.exam.agriculturalfederation.entity.CollectivityStructure;
 import school.hei.exam.agriculturalfederation.entity.Member;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
 import school.hei.exam.agriculturalfederation.entity.RefereeInfo;
