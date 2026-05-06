@@ -112,18 +112,19 @@ public class PaymentService {
             );
         }
 
+        LocalDate transactionDate = LocalDate.now();
         PaymentReceipt receipt = PaymentReceipt.builder()
             .membershipId(membershipId)
             .duesRuleId(dto.membershipFeeIdentifier())
             .amountMga(dto.amount())
             .paymentMethod(paymentModeToPaymentMethod(dto.paymentMode()))
-            .collectedAt(LocalDate.now())
+            .collectedAt(transactionDate)
             .build();
 
         receipt = paymentRepository.create(receipt);
 
         BigDecimal newBalance = account.getBalanceMga().add(dto.amount());
-        accountRepository.updateBalance(account.getId(), newBalance);
+        accountRepository.updateBalance(account.getId(), newBalance, transactionDate);
 
         TreasuryAccount updatedAccount = accountRepository.findById(account.getId());
         FinancialAccountDTO accDto = new FinancialAccountDTO(

@@ -116,11 +116,11 @@ public class TreasuryAccountRepository {
         }
     }
 
-    public void updateBalance(String accountId, BigDecimal newBalance) {
+    public void updateBalance(String accountId, BigDecimal newBalance, LocalDate asOfDate) {
         String sql = "UPDATE treasury_account SET balance_mga = ?, as_of_date = ? WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setBigDecimal(1, newBalance);
-            ps.setDate(2, Date.valueOf(LocalDate.now()));
+            ps.setDate(2, Date.valueOf(asOfDate));
             ps.setString(3, accountId);
             ps.executeUpdate();
         } catch (SQLException e) {
