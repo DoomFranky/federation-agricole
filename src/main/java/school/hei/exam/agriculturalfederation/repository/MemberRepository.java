@@ -24,8 +24,11 @@ public class MemberRepository {
     }
 
     public Member findById(String id) {
-        String sql = "SELECT id, first_name, last_name, birth_date, gender, address, profession, phone_number, email " +
-                   "FROM member WHERE id = ?";
+        String sql = "SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender, m.address, " +
+                   "m.profession, m.phone_number, m.email, cm.occupation " +
+                   "FROM member m " +
+                   "LEFT JOIN collectivity_membership cm ON m.id = cm.member_id AND cm.left_at IS NULL " +
+                   "WHERE m.id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -40,8 +43,11 @@ public class MemberRepository {
     }
 
     public Member findByEmail(String email) {
-        String sql = "SELECT id, first_name, last_name, birth_date, gender, address, profession, phone_number, email " +
-                   "FROM member WHERE email = ?";
+        String sql = "SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender, m.address, " +
+                   "m.profession, m.phone_number, m.email, cm.occupation " +
+                   "FROM member m " +
+                   "LEFT JOIN collectivity_membership cm ON m.id = cm.member_id AND cm.left_at IS NULL " +
+                   "WHERE m.email = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
@@ -60,8 +66,11 @@ public class MemberRepository {
             return new ArrayList<>();
         }
         List<Member> members = new ArrayList<>();
-        String sql = "SELECT id, first_name, last_name, birth_date, gender, address, profession, phone_number, email " +
-                   "FROM member WHERE id = ANY(?)";
+        String sql = "SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender, m.address, " +
+                   "m.profession, m.phone_number, m.email, cm.occupation " +
+                   "FROM member m " +
+                   "LEFT JOIN collectivity_membership cm ON m.id = cm.member_id AND cm.left_at IS NULL " +
+                   "WHERE m.id = ANY(?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setArray(1, connection.createArrayOf("uuid", ids.toArray()));
             try (ResultSet rs = ps.executeQuery()) {
@@ -120,7 +129,8 @@ public class MemberRepository {
         member.setProfession(rs.getString("profession"));
         member.setPhoneNumber(rs.getString("phone_number"));
         member.setEmail(rs.getString("email"));
-        member.setOccupation(OccupationEnum.JUNIOR);
+        String occupation = rs.getString("occupation");
+        member.setOccupation(occupation != null ? OccupationEnum.valueOf(occupation) : OccupationEnum.JUNIOR);
         return member;
     }
 }

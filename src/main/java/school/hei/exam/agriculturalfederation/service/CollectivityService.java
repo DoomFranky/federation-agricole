@@ -63,10 +63,18 @@ public class CollectivityService {
 
             if (d.members() != null && !d.members().isEmpty()) {
                 List<String> structureMemberIds = getStructureMemberIds(d.structure());
+                List<String> seniorIds = membershipRepository.findConfirmedMemberIdsWithMinTenure(
+                    null, SENIORITY_DAYS
+                );
                 for (String memberId : d.members()) {
-                    OccupationEnum occupation = structureMemberIds.contains(memberId)
-                        ? getOccupationForStructureMember(d.structure(), memberId)
-                        : OccupationEnum.JUNIOR;
+                    OccupationEnum occupation;
+                    if (structureMemberIds.contains(memberId)) {
+                        occupation = getOccupationForStructureMember(d.structure(), memberId);
+                    } else if (seniorIds.contains(memberId)) {
+                        occupation = OccupationEnum.SENIOR;
+                    } else {
+                        occupation = OccupationEnum.JUNIOR;
+                    }
                     membershipRepository.createMembership(
                             memberId,
                             collectivity.getId(),
@@ -108,6 +116,9 @@ public class CollectivityService {
             null, SENIORITY_DAYS
         );
         for (String memberId : dto.members()) {
+            if (memberRepository.findById(memberId) == null) {
+                throw new BadRequestException("Member not found: " + memberId);
+            }
             if (seniorIds.contains(memberId)) {
                 seniorMembers++;
             }
@@ -118,6 +129,17 @@ public class CollectivityService {
                 "At least " + MEMBERS_WITH_SENIORITY + " members with at least " +
                 SENIORITY_DAYS + " days of seniority are required. Found: " + seniorMembers
             );
+        }
+
+        if (dto.structure() != null) {
+            List<String> structureMemberIds = getStructureMemberIds(dto.structure());
+            for (String structureMemberId : structureMemberIds) {
+                if (!dto.members().contains(structureMemberId)) {
+                    throw new BadRequestException(
+                        "Structure member " + structureMemberId + " must be included in the members list"
+                    );
+                }
+            }
         }
 
         validateStructure(dto.structure());

@@ -18,11 +18,9 @@ import java.util.UUID;
 @Repository
 public class CollectivityMembershipRepository {
     private final Connection connection;
-    private final MemberRepository memberRepository;
 
-    public CollectivityMembershipRepository(Connection connection, MemberRepository memberRepository) {
+    public CollectivityMembershipRepository(Connection connection) {
         this.connection = connection;
-        this.memberRepository = memberRepository;
     }
 
     public String createMembership(String memberId, String collectivityId, OccupationEnum occupation,UUID membershipuuId) {
@@ -151,8 +149,7 @@ public class CollectivityMembershipRepository {
         List<String> memberIds = new ArrayList<>();
         String baseSql = "SELECT cm.member_id " +
                 "FROM collectivity_membership cm " +
-                "WHERE cm.occupation = 'SENIOR' " +
-                "AND cm.joined_at <= CURRENT_DATE - INTERVAL '1 day' * ? " +
+                "WHERE cm.joined_at <= CURRENT_DATE - INTERVAL '1 day' * ? " +
                 "AND cm.left_at IS NULL";
 
         String sql;
@@ -163,11 +160,9 @@ public class CollectivityMembershipRepository {
         }
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, daysMinTenure);
             if (collectivityId != null) {
-                ps.setInt(1, daysMinTenure);
                 ps.setString(2, collectivityId);
-            } else {
-                ps.setInt(1, daysMinTenure);
             }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
