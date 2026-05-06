@@ -24,7 +24,7 @@ CREATE TYPE payment_method AS ENUM (
 CREATE TYPE dues_frequency AS ENUM (
     'MONTHLY',
     'ANNUALLY',
-    'WEEKLY'
+    'WEEKLY',
     'PUNCTUAL'
     );
 
