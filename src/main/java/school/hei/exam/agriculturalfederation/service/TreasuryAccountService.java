@@ -62,18 +62,18 @@ public class TreasuryAccountService {
             mobileNumber = account.getMobileMoneyAccountDetail().getPhoneNumber();
         }
 
-        return new FinancialAccountDTO(
-            account.getId(),
-            account.getAccountType().name(),
-            account.getBalanceMga(),
-            holderName,
-            bankName,
-            bankCode,
-            branchCode,
-            accountNumber,
-            ribKey,
-            mobileService,
-            mobileNumber
-        );
+        return FinancialAccountDTO.builder()
+            .id(account.getId())
+            .accountType(account.getAccountType().name())
+            .amount(account.getBalanceMga())
+            .holderName(holderName)
+            .bankName(bankName)
+            .bankCode(bankCode)
+            .branchCode(branchCode)
+            .accountNumber(accountNumber)
+            .ribKey(ribKey)
+            .mobileService(mobileService)
+            .mobileNumber(mobileNumber)
+            .build();
     }
 }
