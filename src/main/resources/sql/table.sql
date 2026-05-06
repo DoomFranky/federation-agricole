@@ -360,3 +360,7 @@ CREATE INDEX idx_attendance_activity     ON attendance (activity_id);
 CREATE INDEX idx_attendance_member       ON attendance (member_id);
 CREATE INDEX idx_activity_collectivity   ON activity (collectivity_id);
 CREATE INDEX idx_mandate_member          ON collectivity_mandate (member_id, collectivity_id, occupation);
+
+
+ALTER TABLE payment_receipt
+    ADD COLUMN IF NOT EXISTS treasury_account_id VARCHAR(255) REFERENCES treasury_account(id);

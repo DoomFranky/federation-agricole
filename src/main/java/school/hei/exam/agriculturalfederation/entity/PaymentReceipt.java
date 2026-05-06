@@ -22,6 +22,7 @@ public class PaymentReceipt {
     private String collectedByTreasurer;
     private String notes;
     private Member member;
+    private String treasuryAccountId;
 
     public enum PaymentMethod {
         CASH, BANK_TRANSFER, MOBILE_MONEY

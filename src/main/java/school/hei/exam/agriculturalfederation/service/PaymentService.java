@@ -119,6 +119,7 @@ public class PaymentService {
             .amountMga(dto.amount())
             .paymentMethod(paymentModeToPaymentMethod(dto.paymentMode()))
             .collectedAt(transactionDate)
+            .treasuryAccountId(account.getId())
             .build();
 
         receipt = paymentRepository.create(receipt);

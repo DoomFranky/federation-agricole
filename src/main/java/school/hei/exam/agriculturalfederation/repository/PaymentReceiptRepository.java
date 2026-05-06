@@ -27,8 +27,8 @@ public class PaymentReceiptRepository {
 
     public PaymentReceipt create(PaymentReceipt receipt) {
         String sql = """
-            INSERT INTO payment_receipt (id, collectivity_membership_id, dues_rule_id, amount_mga, payment_method, collected_at, collected_by_treasurer, notes)
-            VALUES (?, ?, ?, ?, ?::payment_method, ?, ?, ?)
+            INSERT INTO payment_receipt (id, collectivity_membership_id, dues_rule_id, amount_mga, payment_method, collected_at, collected_by_treasurer, notes, treasury_account_id)
+            VALUES (?, ?, ?, ?, ?::payment_method, ?, ?, ?, ?)
             RETURNING id
             """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -45,6 +45,7 @@ public class PaymentReceiptRepository {
             ps.setDate(6, Date.valueOf(receipt.getCollectedAt()));
             ps.setString(7, receipt.getCollectedByTreasurer());
             ps.setString(8, receipt.getNotes());
+            ps.setString(9, receipt.getTreasuryAccountId());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     receipt.setId(rs.getString("id"));
@@ -151,6 +152,7 @@ public class PaymentReceiptRepository {
             .collectedByTreasurer(rs.getString("collected_by_treasurer"))
             .notes(rs.getString("notes"))
             .member(member)
+            .treasuryAccountId(rs.getString("treasury_account_id"))
             .build();
     }
 }

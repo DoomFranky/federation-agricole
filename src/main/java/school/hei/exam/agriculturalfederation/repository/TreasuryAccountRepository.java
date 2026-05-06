@@ -55,32 +55,24 @@ public class TreasuryAccountRepository {
     public List<TreasuryAccount> findByCollectivityAtDate(String collectivityId, LocalDate atDate) {
         List<TreasuryAccount> accounts = new ArrayList<>();
         String sql = """
-            SELECT id, collectivity_id, account_type, balance_mga, as_of_date,
-                   account_holder_name, bank_name, bank_code, branch_code, account_number, rib_key,
-                   mm_holder_name, provider, phone_number
-            FROM (
-                SELECT ta.id, ta.collectivity_id, ta.account_type, ta.balance_mga, ta.as_of_date,
-                       ba.account_holder_name, ba.bank_name, ba.bank_code, ba.branch_code, ba.account_number, ba.rib_key,
-                       mm.account_holder_name as mm_holder_name, mm.provider, mm.phone_number,
-                       ROW_NUMBER() OVER (
-                           PARTITION BY CASE
-                               WHEN ta.account_type = 'CASH' THEN 'CASH-' || ta.collectivity_id
-                               WHEN ba.treasury_account_id IS NOT NULL THEN 'BANK-' || ba.treasury_account_id
-                               WHEN mm.treasury_account_id IS NOT NULL THEN 'MM-' || mm.treasury_account_id
-                               ELSE ta.id
-                           END
-                           ORDER BY ta.as_of_date DESC
-                       ) as rn
-                FROM treasury_account ta
-                LEFT JOIN bank_account ba ON ba.treasury_account_id = ta.id
-                LEFT JOIN mobile_money_account mm ON mm.treasury_account_id = ta.id
-                WHERE ta.collectivity_id = ? AND ta.as_of_date <= ?
-            ) ranked
-            WHERE rn = 1
+            SELECT ta.id, ta.collectivity_id, ta.account_type,
+                   COALESCE(SUM(pr.amount_mga), 0) as balance_mga,
+                   ?::date as as_of_date,
+                   ba.account_holder_name, ba.bank_name, ba.bank_code, ba.branch_code, ba.account_number, ba.rib_key,
+                   mm.account_holder_name as mm_holder_name, mm.provider, mm.phone_number
+            FROM treasury_account ta
+            LEFT JOIN bank_account ba ON ba.treasury_account_id = ta.id
+            LEFT JOIN mobile_money_account mm ON mm.treasury_account_id = ta.id
+            LEFT JOIN payment_receipt pr ON pr.treasury_account_id = ta.id AND pr.collected_at <= ?
+            WHERE ta.collectivity_id = ?
+            GROUP BY ta.id, ta.collectivity_id, ta.account_type,
+                     ba.account_holder_name, ba.bank_name, ba.bank_code, ba.branch_code, ba.account_number, ba.rib_key,
+                     mm.account_holder_name, mm.provider, mm.phone_number
             """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, collectivityId);
+            ps.setDate(1, Date.valueOf(atDate));
             ps.setDate(2, Date.valueOf(atDate));
+            ps.setString(3, collectivityId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     accounts.add(mapResultSetToTreasuryAccount(rs));
