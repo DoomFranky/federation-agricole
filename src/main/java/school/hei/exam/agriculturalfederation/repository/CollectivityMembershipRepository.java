@@ -81,6 +81,22 @@ public class CollectivityMembershipRepository {
         return refereeIds;
     }
 
+    public String findMemberCollectivityId(String memberId) {
+        String sql = "SELECT collectivity_id FROM collectivity_membership " +
+                     "WHERE member_id = ? AND left_at IS NULL LIMIT 1";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, memberId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("collectivity_id");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
     public List<Member> findActiveMembersByCollectivity(String collectivityId) {
         List<Member> members = new ArrayList<>();
         String sql = "SELECT m.id, m.first_name, m.last_name, m.birth_date, m.gender, m.address, m.profession, m.phone_number, m.email " +

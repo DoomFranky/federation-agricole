@@ -67,8 +67,8 @@ public class MemberService {
                 throw new NotFoundException("Collectivity not found: " + createMemberDTO.getCollectivityIdentifier());
             }
 
-            List<RefereeInfo> refereeInfos = buildRefereeInfos(createMemberDTO.getReferees(), collectivity.getId());
-            validateReferees(refereeInfos);
+            List<RefereeInfo> refereeInfos = buildRefereeInfos(createMemberDTO.getReferees());
+            validateReferees(refereeInfos, collectivity.getId());
 
             UUID uuid = UUID.randomUUID();
             Member newMember = createMemberEntity(createMemberDTO.getInformation(), uuid);
@@ -128,35 +128,53 @@ public class MemberService {
         }
     }
 
-    private void validateReferees(List<RefereeInfo> referees) {
+    private void validateReferees(List<RefereeInfo> referees, String targetCollectivityId) {
         if (referees.size() < MIN_REFEREES) {
             throw new BadRequestException("At least " + MIN_REFEREES + " referees are required");
         }
+
+        int targetCollectivityCount = 0;
+        int otherCollectivityCount = 0;
 
         for (var referee : referees) {
             if (memberRepository.findById(referee.memberId()) == null) {
                 throw new NotFoundException("Referee not found: " + referee.memberId());
             }
             List<String> confirmedIds = membershipRepository.findConfirmedMemberIdsWithMinTenure(
-                referee.collectivityId(), REFEREE_MIN_TENURE_DAYS
+                null, REFEREE_MIN_TENURE_DAYS
             );
             if (!confirmedIds.contains(referee.memberId())) {
                 throw new BadRequestException(
                     "Referee must be confirmed with " + REFEREE_MIN_TENURE_DAYS + " days seniority"
                 );
             }
+            if (targetCollectivityId.equals(referee.collectivityId())) {
+                targetCollectivityCount++;
+            } else {
+                otherCollectivityCount++;
+            }
+        }
+
+        if (targetCollectivityCount < otherCollectivityCount) {
+            throw new BadRequestException(
+                "Number of referees from target collectivity (" + targetCollectivityCount +
+                ") must be at least equal to referees from other collectivities (" + otherCollectivityCount + ")"
+            );
         }
     }
 
-    private List<RefereeInfo> buildRefereeInfos(
-            List<String> refereeDTOs, String collectivityId) {
+    private List<RefereeInfo> buildRefereeInfos(List<RefereeDTO> refereeDTOs) {
         List<RefereeInfo> infos = new ArrayList<>();
-        for (String ref : refereeDTOs) {
+        for (RefereeDTO ref : refereeDTOs) {
+            String collectivityId = membershipRepository.findMemberCollectivityId(ref.getMemberIdentifier());
+            if (collectivityId == null) {
+                throw new NotFoundException("Referee is not an active member of any collectivity: " + ref.getMemberIdentifier());
+            }
             infos.add(new RefereeInfo(
                 null,
-                ref,
+                ref.getMemberIdentifier(),
                 collectivityId,
-                null
+                ref.getRelationshipNature()
             ));
         }
         return infos;
