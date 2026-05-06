@@ -13,7 +13,6 @@ public class CreateMemberDTO {
     private String phoneNumber;
     private String email;
     private String occupation;
-    private MemberInformationDTO information;
     private String collectivityIdentifier;
     private List<RefereeDTO> referees;
     private Boolean registrationFeePaid;
@@ -22,18 +21,8 @@ public class CreateMemberDTO {
     public CreateMemberDTO() {
     }
 
-    public CreateMemberDTO(MemberInformationDTO information, String collectivityIdentifier,
-                           List<RefereeDTO> referees, Boolean registrationFeePaid, Boolean membershipDuesPaid) {
-        this.information = information;
-        this.collectivityIdentifier = collectivityIdentifier;
-        this.referees = referees;
-        this.registrationFeePaid = registrationFeePaid;
-        this.membershipDuesPaid = membershipDuesPaid;
-    }
-    
-
     public CreateMemberDTO(String firstName, String lastName, LocalDate birthDate, String gender, String address,
-            String profession, String phoneNumber, String email, String occupation, MemberInformationDTO information,
+            String profession, String phoneNumber, String email, String occupation,
             String collectivityIdentifier, List<RefereeDTO> referees, Boolean registrationFeePaid,
             Boolean membershipDuesPaid) {
         this.firstName = firstName;
@@ -45,19 +34,10 @@ public class CreateMemberDTO {
         this.phoneNumber = phoneNumber;
         this.email = email;
         this.occupation = occupation;
-        this.information = information;
         this.collectivityIdentifier = collectivityIdentifier;
         this.referees = referees;
         this.registrationFeePaid = registrationFeePaid;
         this.membershipDuesPaid = membershipDuesPaid;
-    }
-
-    public MemberInformationDTO getInformation() {
-        return information;
-    }
-
-    public void setInformation(MemberInformationDTO information) {
-        this.information = information;
     }
 
     public String getCollectivityIdentifier() {

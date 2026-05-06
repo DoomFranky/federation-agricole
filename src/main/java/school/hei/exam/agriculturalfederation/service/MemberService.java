@@ -2,7 +2,6 @@ package school.hei.exam.agriculturalfederation.service;
 
 import org.springframework.stereotype.Service;
 import school.hei.exam.agriculturalfederation.dto.CreateMemberDTO;
-import school.hei.exam.agriculturalfederation.dto.MemberInformationDTO;
 import school.hei.exam.agriculturalfederation.dto.MemberRestDTO;
 import school.hei.exam.agriculturalfederation.dto.RefereeDTO;
 import school.hei.exam.agriculturalfederation.entity.GenderEnum;
@@ -40,20 +39,6 @@ public class MemberService {
         List<MemberRestDTO> listOfMember = new ArrayList<>();
 
         for (CreateMemberDTO createMemberDTO : dto) {
-            createMemberDTO.setInformation(
-                new MemberInformationDTO(
-                    createMemberDTO.getFirstName(),
-                    createMemberDTO.getLastName(),
-                    createMemberDTO.getBirthDate(),
-                    createMemberDTO.getGender().toString(),
-                    createMemberDTO.getAddress(),
-                    createMemberDTO.getProfession(),
-                    createMemberDTO.getPhoneNumber(),
-                    createMemberDTO.getEmail(),
-                    createMemberDTO.getOccupation().toString()
-                )
-            );
-
             validateCreateMemberInput(createMemberDTO);
 
             var collectivity = collectivityRepository.findById(createMemberDTO.getCollectivityIdentifier());
@@ -71,7 +56,7 @@ public class MemberService {
             validateReferees(refereeInfos, collectivity.getId());
 
             UUID uuid = UUID.randomUUID();
-            Member newMember = createMemberEntity(createMemberDTO.getInformation(), uuid);
+            Member newMember = createMemberEntity(createMemberDTO, uuid);
 
             UUID memberShipUUID = UUID.randomUUID();
             membershipRepository.createMembership(
@@ -111,8 +96,8 @@ public class MemberService {
     }
 
     private void validateCreateMemberInput(CreateMemberDTO dto) {
-        if (dto.getInformation() == null) {
-            throw new BadRequestException("Member information is required");
+        if (dto.getFirstName() == null || dto.getFirstName().isBlank()) {
+            throw new BadRequestException("First name is required");
         }
         if (dto.getCollectivityIdentifier() == null || dto.getCollectivityIdentifier().isBlank()) {
             throw new BadRequestException("Collectivity identifier is required");
@@ -180,19 +165,19 @@ public class MemberService {
         return infos;
     }
 
-    private Member createMemberEntity(MemberInformationDTO info,UUID uuid) {
+    private Member createMemberEntity(CreateMemberDTO dto, UUID uuid) {
         Member member = new Member();
         member.setId(uuid.toString());
-        member.setFirstName(info.getFirstName());
-        member.setLastName(info.getLastName());
-        member.setBirthDate(info.getBirthDate());
-        member.setGender(GenderEnum.valueOf(info.getGender().toUpperCase()));
-        member.setAddress(info.getAddress());
-        member.setProfession(info.getProfession());
-        member.setPhoneNumber(info.getPhoneNumber());
-        member.setEmail(info.getEmail());
+        member.setFirstName(dto.getFirstName());
+        member.setLastName(dto.getLastName());
+        member.setBirthDate(dto.getBirthDate());
+        member.setGender(GenderEnum.valueOf(dto.getGender().toUpperCase()));
+        member.setAddress(dto.getAddress());
+        member.setProfession(dto.getProfession());
+        member.setPhoneNumber(dto.getPhoneNumber());
+        member.setEmail(dto.getEmail());
         member.setOccupation(OccupationEnum.JUNIOR);
-        memberRepository.create(member,uuid);
+        memberRepository.create(member, uuid);
         return memberRepository.findById(uuid.toString());
     }
 
