@@ -78,7 +78,7 @@ CREATE TABLE federation (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE collectivity (
-                              id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                              id                  VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
                               number              INTEGER,        -- human-readable unique number
                               name                TEXT,
                               location            TEXT NOT NULL,                 -- city / locality
@@ -93,7 +93,7 @@ CREATE TABLE collectivity (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE member (
-                        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        id              VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
                         first_name      TEXT NOT NULL,
                         last_name       TEXT NOT NULL,
                         birth_date      DATE NOT NULL,
@@ -111,9 +111,9 @@ CREATE TABLE member (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE collectivity_membership (
-                                         id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                         member_id           UUID NOT NULL REFERENCES member(id),
-                                         collectivity_id     UUID NOT NULL REFERENCES collectivity(id),
+                                         id                  VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
+                                         member_id           VARCHAR(255) NOT NULL REFERENCES member(id),
+                                         collectivity_id     VARCHAR(255) NOT NULL REFERENCES collectivity(id),
                                          occupation          member_occupation NOT NULL DEFAULT 'JUNIOR',
                                          joined_at           DATE NOT NULL DEFAULT CURRENT_DATE,
                                          left_at             DATE,                          -- NULL = still active
@@ -134,11 +134,11 @@ CREATE TABLE collectivity_membership (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE membership_referee (
-                                    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                    membership_id           UUID NOT NULL REFERENCES collectivity_membership(id) ON DELETE CASCADE,
-                                    referee_member_id       UUID NOT NULL REFERENCES member(id),
+                                    id                      VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
+                                    membership_id           VARCHAR(255) NOT NULL REFERENCES collectivity_membership(id) ON DELETE CASCADE,
+                                    referee_member_id       VARCHAR(255) NOT NULL REFERENCES member(id),
     -- collectivity of the referee at the time of application (denormalised for rule check)
-                                    referee_collectivity_id UUID NOT NULL REFERENCES collectivity(id),
+                                    referee_collectivity_id VARCHAR(255) NOT NULL REFERENCES collectivity(id),
                                     relationship_nature     TEXT,             -- e.g. 'family', 'friend', 'colleague'
 
                                     UNIQUE (membership_id, referee_member_id)
@@ -151,9 +151,9 @@ CREATE TABLE membership_referee (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE collectivity_mandate (
-                                      id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                      collectivity_id UUID NOT NULL REFERENCES collectivity(id),
-                                      member_id       UUID NOT NULL REFERENCES member(id),
+                                      id              VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
+                                      collectivity_id VARCHAR(255) NOT NULL REFERENCES collectivity(id),
+                                      member_id       VARCHAR(255) NOT NULL REFERENCES member(id),
                                       occupation      member_occupation NOT NULL
                                           CHECK (occupation IN ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY')),
                                       date            DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -172,9 +172,9 @@ CREATE UNIQUE INDEX uq_mandate_count
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE federation_mandate (
-                                    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                    id          VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
                                     federation_id INTEGER NOT NULL REFERENCES federation(id),
-                                    member_id   UUID NOT NULL REFERENCES member(id),
+                                    member_id   VARCHAR(255) NOT NULL REFERENCES member(id),
                                     occupation  member_occupation NOT NULL
                                         CHECK (occupation IN ('PRESIDENT','VICE_PRESIDENT','TREASURER','SECRETARY')),
                                     start_year  SMALLINT NOT NULL,
@@ -189,8 +189,8 @@ CREATE TABLE federation_mandate (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE dues_rule (
-                           id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                           collectivity_id UUID NOT NULL REFERENCES collectivity(id),
+                           id              VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
+                           collectivity_id VARCHAR(255) NOT NULL REFERENCES collectivity(id),
                            frequency       dues_frequency NOT NULL,
                            amount_mga      NUMERIC(12,2) NOT NULL CHECK (amount_mga > 0),
                            label           TEXT,                              -- e.g. "Cotisation annuelle obligatoire"
@@ -205,13 +205,13 @@ CREATE TABLE dues_rule (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE payment_receipt (
-                                 id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                 collectivity_membership_id UUID NOT NULL REFERENCES collectivity_membership(id),
-                                 dues_rule_id            UUID REFERENCES dues_rule(id),   -- NULL for ad-hoc payments
+                                 id                      VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
+                                 collectivity_membership_id VARCHAR(255) NOT NULL REFERENCES collectivity_membership(id),
+                                 dues_rule_id            VARCHAR(255) REFERENCES dues_rule(id),   -- NULL for ad-hoc payments
                                  amount_mga              NUMERIC(12,2) NOT NULL CHECK (amount_mga > 0),
                                  payment_method          payment_method NOT NULL,
                                  collected_at            DATE NOT NULL DEFAULT CURRENT_DATE,
-                                 collected_by_treasurer  UUID REFERENCES member(id),      -- treasurer who recorded it
+                                 collected_by_treasurer  VARCHAR(255) REFERENCES member(id),      -- treasurer who recorded it
                                  notes                   TEXT
 );
 
@@ -220,9 +220,9 @@ CREATE TABLE payment_receipt (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE treasury_account (
-                                  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                  id              VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
     -- Belongs to either a collectivity OR the federation (exactly one must be set)
-                                  collectivity_id UUID REFERENCES collectivity(id),
+                                  collectivity_id VARCHAR(255) REFERENCES collectivity(id),
                                   federation_id   INTEGER REFERENCES federation(id),
                                   account_type    account_type NOT NULL,
                                   balance_mga     NUMERIC(14,2) NOT NULL DEFAULT 0,
@@ -249,7 +249,7 @@ CREATE UNIQUE INDEX uq_cash_per_federation
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE bank_account (
-                              treasury_account_id UUID PRIMARY KEY REFERENCES treasury_account(id) ON DELETE CASCADE,
+                              treasury_account_id VARCHAR(255) PRIMARY KEY REFERENCES treasury_account(id) ON DELETE CASCADE,
                               account_holder_name TEXT NOT NULL,
                               bank_name           bank_name NOT NULL,
     -- RIB format BBBBBGGGGGCCCCCCCCCCCKKK (23 digits)
@@ -264,7 +264,7 @@ CREATE TABLE bank_account (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE mobile_money_account (
-                                      treasury_account_id UUID PRIMARY KEY REFERENCES treasury_account(id) ON DELETE CASCADE,
+                                      treasury_account_id VARCHAR(255) PRIMARY KEY REFERENCES treasury_account(id) ON DELETE CASCADE,
                                       account_holder_name TEXT NOT NULL,
                                       provider            mobile_money_provider NOT NULL,
                                       phone_number        VARCHAR(20) NOT NULL UNIQUE
@@ -275,8 +275,8 @@ CREATE TABLE mobile_money_account (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE activity (
-                          id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                          collectivity_id UUID REFERENCES collectivity(id),   -- NULL if federation-level
+                          id              VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
+                          collectivity_id VARCHAR(255) REFERENCES collectivity(id),   -- NULL if federation-level
                           federation_id   INTEGER REFERENCES federation(id),
                           scope           activity_scope NOT NULL,
                           activity_type   activity_type NOT NULL,
@@ -295,7 +295,7 @@ CREATE TABLE activity (
 
 -- Targeted mandatory presence: which occupations must attend (NULL = all)
 CREATE TABLE activity_target_occupation (
-                                            activity_id UUID NOT NULL REFERENCES activity(id) ON DELETE CASCADE,
+                                            activity_id VARCHAR(255) NOT NULL REFERENCES activity(id) ON DELETE CASCADE,
                                             occupation  member_occupation NOT NULL,
                                             PRIMARY KEY (activity_id, occupation)
 );
@@ -305,17 +305,17 @@ CREATE TABLE activity_target_occupation (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE attendance (
-                            id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                            activity_id     UUID NOT NULL REFERENCES activity(id),
-                            member_id       UUID NOT NULL REFERENCES member(id),
+                            id              VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
+                            activity_id     VARCHAR(255) NOT NULL REFERENCES activity(id),
+                            member_id       VARCHAR(255) NOT NULL REFERENCES member(id),
     -- Home collectivity at time of activity (for assiduity calculation scope)
-                            home_collectivity_id UUID REFERENCES collectivity(id),
+                            home_collectivity_id VARCHAR(255) REFERENCES collectivity(id),
                             is_present      BOOLEAN NOT NULL,
                             is_excused      BOOLEAN NOT NULL DEFAULT FALSE,
                             excuse_note     TEXT,
     -- TRUE if this member is a guest from another collectivity
                             is_guest        BOOLEAN NOT NULL DEFAULT FALSE,
-                            recorded_by     UUID REFERENCES member(id),        -- secretary who recorded
+                            recorded_by     VARCHAR(255) REFERENCES member(id),        -- secretary who recorded
 
                             UNIQUE (activity_id, member_id)
 );
@@ -326,9 +326,9 @@ CREATE TABLE attendance (
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE federation_report (
-                                   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                   id                  VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
                                    federation_id       INTEGER NOT NULL REFERENCES federation(id),
-                                   generated_by        UUID REFERENCES member(id),     -- secretary
+                                   generated_by        VARCHAR(255) REFERENCES member(id),     -- secretary
                                    period_start        DATE NOT NULL,
                                    period_end          DATE NOT NULL,
                                    generated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -337,9 +337,9 @@ CREATE TABLE federation_report (
 );
 
 CREATE TABLE federation_report_collectivity (
-                                                id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                                report_id               UUID NOT NULL REFERENCES federation_report(id) ON DELETE CASCADE,
-                                                collectivity_id         UUID NOT NULL REFERENCES collectivity(id),
+                                                id                      VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
+                                                report_id               VARCHAR(255) NOT NULL REFERENCES federation_report(id) ON DELETE CASCADE,
+                                                collectivity_id         VARCHAR(255) NOT NULL REFERENCES collectivity(id),
                                                 attendance_rate         NUMERIC(5,2) CHECK (attendance_rate BETWEEN 0 AND 100),
                                                 dues_compliance_pct     NUMERIC(5,2) CHECK (dues_compliance_pct BETWEEN 0 AND 100),
                                                 new_members_count       INTEGER NOT NULL DEFAULT 0,
