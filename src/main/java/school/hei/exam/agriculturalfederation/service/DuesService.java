@@ -44,13 +44,15 @@ public class DuesService {
 
     private MembershipFeeDTO createFee(String collectivityId, CreateMembershipFeeDTO dto) {
         validateFee(dto);
-        
+
         DuesRule.DuesFrequency newFrequency = DuesRule.DuesFrequency.valueOf(dto.frequency().toUpperCase());
-        
+
+        LocalDate newEffectiveFrom = dto.eligibleFrom() != null ? dto.eligibleFrom() : LocalDate.now();
+
         if (newFrequency != DuesRule.DuesFrequency.PUNCTUAL) {
             for (DuesRule existing : duesRuleRepository.findActiveByCollectivity(collectivityId)) {
                 if (existing.getFrequency() == newFrequency) {
-                    existing.setEffectiveTo(LocalDate.now().minusDays(1));
+                    existing.setEffectiveTo(newEffectiveFrom.minusDays(1));
                     duesRuleRepository.deactivate(existing.getId());
                 }
             }
@@ -61,7 +63,7 @@ public class DuesService {
             .frequency(DuesRule.DuesFrequency.valueOf(dto.frequency().toUpperCase()))
             .amountMga(dto.amount())
             .label(dto.label())
-            .effectiveFrom(dto.eligibleFrom() != null ? dto.eligibleFrom() : LocalDate.now())
+            .effectiveFrom(newEffectiveFrom)
             .active(true)
             .build();
 
