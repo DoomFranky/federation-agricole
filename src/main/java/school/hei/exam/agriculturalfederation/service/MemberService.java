@@ -153,8 +153,10 @@ public class MemberService {
         List<RefereeInfo> infos = new ArrayList<>();
         for (String ref : refereeDTOs) {
             infos.add(new RefereeInfo(
+                null,
                 ref,
-                collectivityId
+                collectivityId,
+                null
             ));
         }
         return infos;

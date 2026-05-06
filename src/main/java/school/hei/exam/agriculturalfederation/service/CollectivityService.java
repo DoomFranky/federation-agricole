@@ -92,29 +92,28 @@ public class CollectivityService {
         if (dto.location() == null || dto.location().isBlank()) {
             throw new BadRequestException("Location is required");
         }
-        if (dto.members() != null && dto.members().size() < MIN_MEMBERS) {
+        if (dto.members() == null || dto.members().size() < MIN_MEMBERS) {
             throw new BadRequestException(
                 "At least " + MIN_MEMBERS + " members are required to create a collectivity. " +
-                "Provided: " + dto.members().size()
+                "Provided: " + (dto.members() == null ? 0 : dto.members().size())
             );
         }
-        if (dto.members() != null) {
-            int seniorMembers = 0;
-                List<String> seniorIds = membershipRepository.findConfirmedMemberIdsWithMinTenure(
-                    null, SENIORITY_DAYS
-                );
-            for (String memberId : dto.members()) {
-                if (seniorIds.contains(memberId)) {
-                    seniorMembers++;
-                }
+        
+        int seniorMembers = 0;
+        List<String> seniorIds = membershipRepository.findConfirmedMemberIdsWithMinTenure(
+            null, SENIORITY_DAYS
+        );
+        for (String memberId : dto.members()) {
+            if (seniorIds.contains(memberId)) {
+                seniorMembers++;
             }
+        }
 
-            if (seniorMembers < MEMBERS_WITH_SENIORITY) {
-                throw new BadRequestException(
-                    "At least " + MEMBERS_WITH_SENIORITY + " members with at least " +
-                    SENIORITY_DAYS + " days of seniority are required. Found: " + seniorMembers
-                );
-            }
+        if (seniorMembers < MEMBERS_WITH_SENIORITY) {
+            throw new BadRequestException(
+                "At least " + MEMBERS_WITH_SENIORITY + " members with at least " +
+                SENIORITY_DAYS + " days of seniority are required. Found: " + seniorMembers
+            );
         }
 
         validateStructure(dto.structure());
@@ -170,6 +169,13 @@ public class CollectivityService {
             throw new BadRequestException("Name is required");
         }
 
+        if (existing.getNumber() != null && !existing.getNumber().equals(identity.number())) {
+            throw new ConflictException("Number already assigned and cannot be changed for collectivity: " + collectivityId);
+        }
+        if (existing.getName() != null && !existing.getName().equals(identity.name())) {
+            throw new ConflictException("Name already assigned and cannot be changed for collectivity: " + collectivityId);
+        }
+
         Collectivity byNumber = collectivityRepository.findByNumber(identity.number());
         if (byNumber != null && !byNumber.getId().equals(collectivityId)) {
             throw new ConflictException("Number already used by another collectivity: " + identity.number());
@@ -199,18 +205,22 @@ public class CollectivityService {
         CollectivityStructure cs = new CollectivityStructure();
 
         if (structure.president() != null) {
+            validateMandateLimit(collectivityId, structure.president(), "PRESIDENT");
             Member president = memberRepository.findById(structure.president());
             if (president != null) cs.setPresident(president);
         }
         if (structure.vicePresident() != null) {
+            validateMandateLimit(collectivityId, structure.vicePresident(), "VICE_PRESIDENT");
             Member vp = memberRepository.findById(structure.vicePresident());
             if (vp != null) cs.setVicePresident(vp);
         }
         if (structure.treasurer() != null) {
+            validateMandateLimit(collectivityId, structure.treasurer(), "TREASURER");
             Member treasurer = memberRepository.findById(structure.treasurer());
             if (treasurer != null) cs.setTreasurer(treasurer);
         }
         if (structure.secretary() != null) {
+            validateMandateLimit(collectivityId, structure.secretary(), "SECRETARY");
             Member secretary = memberRepository.findById(structure.secretary());
             if (secretary != null) cs.setSecretary(secretary);
         }
@@ -218,6 +228,15 @@ public class CollectivityService {
         if (cs.getPresident() != null || cs.getVicePresident() != null
             || cs.getTreasurer() != null || cs.getSecretary() != null) {
             collectivityRepository.saveStructure(collectivityId, cs);
+        }
+    }
+
+    private void validateMandateLimit(String collectivityId, String memberId, String occupation) {
+        int mandateCount = membershipRepository.countMandates(collectivityId, memberId, occupation);
+        if (mandateCount >= 2) {
+            throw new BadRequestException(
+                "Member " + memberId + " already has 2 mandates for position " + occupation + " in collectivity " + collectivityId
+            );
         }
     }
 }

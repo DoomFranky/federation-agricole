@@ -1,3 +1,3 @@
 package school.hei.exam.agriculturalfederation.entity;
 
-public record RefereeInfo(String memberId, String collectivityId) {}
+public record RefereeInfo(String id, String memberId, String collectivityId, String relationshipNature) {}
