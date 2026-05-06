@@ -21,6 +21,7 @@ public class PaymentReceipt {
     private LocalDate collectedAt;
     private String collectedByTreasurer;
     private String notes;
+    private Member member;
 
     public enum PaymentMethod {
         CASH, BANK_TRANSFER, MOBILE_MONEY

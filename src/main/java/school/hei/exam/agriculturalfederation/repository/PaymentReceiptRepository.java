@@ -1,6 +1,9 @@
 package school.hei.exam.agriculturalfederation.repository;
 
 import org.springframework.stereotype.Repository;
+import school.hei.exam.agriculturalfederation.entity.GenderEnum;
+import school.hei.exam.agriculturalfederation.entity.Member;
+import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
 import school.hei.exam.agriculturalfederation.entity.PaymentReceipt;
 
 import java.math.BigDecimal;
@@ -77,9 +80,13 @@ public class PaymentReceiptRepository {
     public List<PaymentReceipt> findByCollectivityInPeriod(String collectivityId, LocalDate from, LocalDate to) {
         List<PaymentReceipt> receipts = new ArrayList<>();
         String sql = """
-            SELECT pr.id, pr.collectivity_membership_id, pr.dues_rule_id, pr.amount_mga, pr.payment_method, pr.collected_at, pr.collected_by_treasurer, pr.notes
+            SELECT pr.id, pr.collectivity_membership_id, pr.dues_rule_id, pr.amount_mga, pr.payment_method,
+                   pr.collected_at, pr.collected_by_treasurer, pr.notes,
+                   m.id as member_id, m.first_name, m.last_name, m.birth_date, m.gender, m.address,
+                   m.profession, m.phone_number, m.email, cm.occupation
             FROM payment_receipt pr
             JOIN collectivity_membership cm ON cm.id = pr.collectivity_membership_id
+            JOIN member m ON m.id = cm.member_id
             WHERE cm.collectivity_id = ?
             AND pr.collected_at BETWEEN ? AND ?
             ORDER BY pr.collected_at DESC
@@ -122,6 +129,18 @@ public class PaymentReceiptRepository {
     }
 
     private PaymentReceipt mapResultSetToReceipt(ResultSet rs) throws SQLException {
+        Member member = Member.builder()
+            .id(rs.getString("member_id"))
+            .firstName(rs.getString("first_name"))
+            .lastName(rs.getString("last_name"))
+            .birthDate(rs.getDate("birth_date").toLocalDate())
+            .gender(GenderEnum.valueOf(rs.getString("gender")))
+            .address(rs.getString("address"))
+            .profession(rs.getString("profession"))
+            .phoneNumber(rs.getString("phone_number"))
+            .email(rs.getString("email"))
+            .occupation(OccupationEnum.valueOf(rs.getString("occupation")))
+            .build();
         return PaymentReceipt.builder()
             .id(rs.getString("id"))
             .membershipId(rs.getString("collectivity_membership_id"))
@@ -131,6 +150,7 @@ public class PaymentReceiptRepository {
             .collectedAt(rs.getDate("collected_at").toLocalDate())
             .collectedByTreasurer(rs.getString("collected_by_treasurer"))
             .notes(rs.getString("notes"))
+            .member(member)
             .build();
     }
 }

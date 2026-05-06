@@ -68,8 +68,7 @@ public class TransactionService {
                     receipt.getAmountMga(),
                     receipt.getPaymentMethod().name(),
                     acc,
-                    receipt.getMembershipId(),
-                    null
+                    receipt.getMember()
                 );
             })
             .collect(Collectors.toList());

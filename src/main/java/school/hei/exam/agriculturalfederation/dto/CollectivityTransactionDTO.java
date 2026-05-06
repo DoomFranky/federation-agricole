@@ -2,6 +2,7 @@ package school.hei.exam.agriculturalfederation.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import school.hei.exam.agriculturalfederation.entity.Member;
 
 public record CollectivityTransactionDTO(
     String id,
@@ -9,6 +10,5 @@ public record CollectivityTransactionDTO(
     BigDecimal amount,
     String paymentMode,
     FinancialAccountDTO accountCredited,
-    String memberId,
-    String memberName
+    Member memberDebited
 ) {}
