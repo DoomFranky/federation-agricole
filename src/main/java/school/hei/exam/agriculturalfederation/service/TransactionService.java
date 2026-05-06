@@ -46,9 +46,13 @@ public class TransactionService {
             .map(receipt -> {
                 FinancialAccountDTO acc = null;
                 if (receipt.getMembershipId() != null) {
-                    List<TreasuryAccount> accounts = accountRepository.findByCollectivity(collectivityId);
-                    if (!accounts.isEmpty()) {
-                        TreasuryAccount ta = accounts.get(0);
+                    TreasuryAccount.AccountType accountType = paymentMethodToAccountType(receipt.getPaymentMethod());
+                    TreasuryAccount ta = accountRepository.findByCollectivityAndType(collectivityId, accountType);
+                    if (ta == null) {
+                        ta = accountRepository.findByCollectivity(collectivityId).stream()
+                            .findFirst().orElse(null);
+                    }
+                    if (ta != null) {
                         acc = new FinancialAccountDTO(
                             ta.getId(),
                             ta.getAccountType().name(),
@@ -68,5 +72,13 @@ public class TransactionService {
                 );
             })
             .collect(Collectors.toList());
+    }
+
+    private TreasuryAccount.AccountType paymentMethodToAccountType(PaymentReceipt.PaymentMethod method) {
+        return switch (method) {
+            case CASH -> TreasuryAccount.AccountType.CASH;
+            case BANK_TRANSFER -> TreasuryAccount.AccountType.BANK;
+            case MOBILE_MONEY -> TreasuryAccount.AccountType.MOBILE_MONEY;
+        };
     }
 }

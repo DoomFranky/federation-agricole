@@ -92,37 +92,39 @@ public class PaymentService {
             }
         }
 
+        TreasuryAccount account = accountRepository.findById(dto.accountCreditedIdentifier());
+        if (account == null) {
+            throw new NotFoundException("Account not found: " + dto.accountCreditedIdentifier());
+        }
+
+        TreasuryAccount.AccountType expectedType = paymentModeToAccountType(dto.paymentMode());
+        if (account.getAccountType() != expectedType) {
+            throw new BadRequestException(
+                "Payment mode " + dto.paymentMode() + " requires account type " + expectedType +
+                " but account " + dto.accountCreditedIdentifier() + " is of type " + account.getAccountType()
+            );
+        }
+
         PaymentReceipt receipt = PaymentReceipt.builder()
             .membershipId(membershipId)
             .duesRuleId(dto.membershipFeeIdentifier())
             .amountMga(dto.amount())
-            .paymentMethod(PaymentReceipt.PaymentMethod.valueOf(dto.paymentMode().toUpperCase()))
+            .paymentMethod(paymentModeToPaymentMethod(dto.paymentMode()))
             .collectedAt(LocalDate.now())
             .build();
 
         receipt = paymentRepository.create(receipt);
 
-        if (dto.accountCreditedIdentifier() != null) {
-            TreasuryAccount account = accountRepository.findById(dto.accountCreditedIdentifier());
-            if (account != null) {
-                BigDecimal newBalance = account.getBalanceMga().add(dto.amount());
-                accountRepository.updateBalance(account.getId(), newBalance);
-                account.setBalanceMga(newBalance);
-            }
-        }
+        BigDecimal newBalance = account.getBalanceMga().add(dto.amount());
+        accountRepository.updateBalance(account.getId(), newBalance);
 
-        FinancialAccountDTO accDto = null;
-        if (dto.accountCreditedIdentifier() != null) {
-            TreasuryAccount acc = accountRepository.findById(dto.accountCreditedIdentifier());
-            if (acc != null) {
-                accDto = new FinancialAccountDTO(
-                    acc.getId(),
-                    acc.getAccountType().name(),
-                    acc.getBalanceMga(),
-                    null, null, null, null, null, null, null, null
-                );
-            }
-        }
+        TreasuryAccount updatedAccount = accountRepository.findById(account.getId());
+        FinancialAccountDTO accDto = new FinancialAccountDTO(
+            updatedAccount.getId(),
+            updatedAccount.getAccountType().name(),
+            updatedAccount.getBalanceMga(),
+            null, null, null, null, null, null, null, null
+        );
 
         return new MemberPaymentDTO(
             receipt.getId(),
@@ -131,6 +133,26 @@ public class PaymentService {
             accDto,
             receipt.getCollectedAt()
         );
+    }
+
+    private TreasuryAccount.AccountType paymentModeToAccountType(String paymentMode) {
+        String mode = paymentMode.toUpperCase();
+        return switch (mode) {
+            case "CASH" -> TreasuryAccount.AccountType.CASH;
+            case "BANK_TRANSFER" -> TreasuryAccount.AccountType.BANK;
+            case "MOBILE_BANKING" -> TreasuryAccount.AccountType.MOBILE_MONEY;
+            default -> throw new BadRequestException("Invalid payment mode: " + paymentMode);
+        };
+    }
+
+    private PaymentReceipt.PaymentMethod paymentModeToPaymentMethod(String paymentMode) {
+        String mode = paymentMode.toUpperCase();
+        return switch (mode) {
+            case "CASH" -> PaymentReceipt.PaymentMethod.CASH;
+            case "BANK_TRANSFER" -> PaymentReceipt.PaymentMethod.BANK_TRANSFER;
+            case "MOBILE_BANKING" -> PaymentReceipt.PaymentMethod.MOBILE_MONEY;
+            default -> throw new BadRequestException("Invalid payment mode: " + paymentMode);
+        };
     }
 
     private void validatePayment(CreateMemberPaymentDTO dto) {

@@ -24,20 +24,20 @@ public class TreasuryAccountRepository {
 
     public List<TreasuryAccount> findByCollectivity(String collectivityId) {
         List<TreasuryAccount> accounts = new ArrayList<>();
-        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE collectivity_id = ?";
+        String sql = """
+            SELECT ta.id, ta.collectivity_id, ta.account_type, ta.balance_mga, ta.as_of_date,
+                   ba.account_holder_name, ba.bank_name, ba.bank_code, ba.branch_code, ba.account_number, ba.rib_key,
+                   mm.account_holder_name as mm_holder_name, mm.provider, mm.phone_number
+            FROM treasury_account ta
+            LEFT JOIN bank_account ba ON ba.treasury_account_id = ta.id
+            LEFT JOIN mobile_money_account mm ON mm.treasury_account_id = ta.id
+            WHERE ta.collectivity_id = ?
+            """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, collectivityId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    TreasuryAccount acc = TreasuryAccount.builder()
-                        .id(rs.getString("id"))
-                        .collectivityId(rs.getString("collectivity_id"))
-                        .accountType(TreasuryAccount.AccountType.valueOf(rs.getString("account_type")))
-                        .balanceMga(rs.getBigDecimal("balance_mga"))
-                        .asOfDate(rs.getDate("as_of_date").toLocalDate())
-                        .currency("MGA")
-                        .build();
-                    accounts.add(acc);
+                    accounts.add(mapResultSetToTreasuryAccount(rs));
                 }
             }
         } catch (SQLException e) {
@@ -48,21 +48,36 @@ public class TreasuryAccountRepository {
 
     public List<TreasuryAccount> findByCollectivityAtDate(String collectivityId, LocalDate atDate) {
         List<TreasuryAccount> accounts = new ArrayList<>();
-        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE collectivity_id = ? AND as_of_date <= ?";
+        String sql = """
+            SELECT id, collectivity_id, account_type, balance_mga, as_of_date,
+                   account_holder_name, bank_name, bank_code, branch_code, account_number, rib_key,
+                   mm_holder_name, provider, phone_number
+            FROM (
+                SELECT ta.id, ta.collectivity_id, ta.account_type, ta.balance_mga, ta.as_of_date,
+                       ba.account_holder_name, ba.bank_name, ba.bank_code, ba.branch_code, ba.account_number, ba.rib_key,
+                       mm.account_holder_name as mm_holder_name, mm.provider, mm.phone_number,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY CASE
+                               WHEN ta.account_type = 'CASH' THEN 'CASH-' || ta.collectivity_id
+                               WHEN ba.treasury_account_id IS NOT NULL THEN 'BANK-' || ba.treasury_account_id
+                               WHEN mm.treasury_account_id IS NOT NULL THEN 'MM-' || mm.treasury_account_id
+                               ELSE ta.id
+                           END
+                           ORDER BY ta.as_of_date DESC
+                       ) as rn
+                FROM treasury_account ta
+                LEFT JOIN bank_account ba ON ba.treasury_account_id = ta.id
+                LEFT JOIN mobile_money_account mm ON mm.treasury_account_id = ta.id
+                WHERE ta.collectivity_id = ? AND ta.as_of_date <= ?
+            ) ranked
+            WHERE rn = 1
+            """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, collectivityId);
             ps.setDate(2, Date.valueOf(atDate));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    TreasuryAccount acc = TreasuryAccount.builder()
-                        .id(rs.getString("id"))
-                        .collectivityId(rs.getString("collectivity_id"))
-                        .accountType(TreasuryAccount.AccountType.valueOf(rs.getString("account_type")))
-                        .balanceMga(rs.getBigDecimal("balance_mga"))
-                        .asOfDate(rs.getDate("as_of_date").toLocalDate())
-                        .currency("MGA")
-                        .build();
-                    accounts.add(acc);
+                    accounts.add(mapResultSetToTreasuryAccount(rs));
                 }
             }
         } catch (SQLException e) {
@@ -108,24 +123,92 @@ public class TreasuryAccountRepository {
     }
 
     public TreasuryAccount findById(String id) {
-        String sql = "SELECT id, collectivity_id, account_type, balance_mga, as_of_date FROM treasury_account WHERE id = ?";
+        String sql = """
+            SELECT ta.id, ta.collectivity_id, ta.account_type, ta.balance_mga, ta.as_of_date,
+                   ba.account_holder_name, ba.bank_name, ba.bank_code, ba.branch_code, ba.account_number, ba.rib_key,
+                   mm.account_holder_name as mm_holder_name, mm.provider, mm.phone_number
+            FROM treasury_account ta
+            LEFT JOIN bank_account ba ON ba.treasury_account_id = ta.id
+            LEFT JOIN mobile_money_account mm ON mm.treasury_account_id = ta.id
+            WHERE ta.id = ?
+            """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return TreasuryAccount.builder()
-                        .id(rs.getString("id"))
-                        .collectivityId(rs.getString("collectivity_id"))
-                        .accountType(TreasuryAccount.AccountType.valueOf(rs.getString("account_type")))
-                        .balanceMga(rs.getBigDecimal("balance_mga"))
-                        .asOfDate(rs.getDate("as_of_date").toLocalDate())
-                        .currency("MGA")
-                        .build();
+                    return mapResultSetToTreasuryAccount(rs);
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         return null;
+    }
+
+    public TreasuryAccount findByCollectivityAndType(String collectivityId, TreasuryAccount.AccountType accountType) {
+        String sql = """
+            SELECT ta.id, ta.collectivity_id, ta.account_type, ta.balance_mga, ta.as_of_date,
+                   ba.account_holder_name, ba.bank_name, ba.bank_code, ba.branch_code, ba.account_number, ba.rib_key,
+                   mm.account_holder_name as mm_holder_name, mm.provider, mm.phone_number
+            FROM treasury_account ta
+            LEFT JOIN bank_account ba ON ba.treasury_account_id = ta.id
+            LEFT JOIN mobile_money_account mm ON mm.treasury_account_id = ta.id
+            WHERE ta.collectivity_id = ? AND ta.account_type = ?::account_type
+            ORDER BY ta.as_of_date DESC
+            LIMIT 1
+            """;
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, collectivityId);
+            ps.setString(2, accountType.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToTreasuryAccount(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    private TreasuryAccount mapResultSetToTreasuryAccount(ResultSet rs) throws SQLException {
+        TreasuryAccount.TreasuryAccountBuilder builder = TreasuryAccount.builder()
+            .id(rs.getString("id"))
+            .collectivityId(rs.getString("collectivity_id"))
+            .accountType(TreasuryAccount.AccountType.valueOf(rs.getString("account_type")))
+            .balanceMga(rs.getBigDecimal("balance_mga"))
+            .asOfDate(rs.getDate("as_of_date").toLocalDate())
+            .currency("MGA");
+
+        TreasuryAccount.AccountType type = TreasuryAccount.AccountType.valueOf(rs.getString("account_type"));
+
+        if (type == TreasuryAccount.AccountType.BANK) {
+            String bankHolderName = rs.getString("account_holder_name");
+            String bankNameStr = rs.getString("bank_name");
+            if (bankHolderName != null || bankNameStr != null) {
+                TreasuryAccount.BankName bankName = bankNameStr != null ? TreasuryAccount.BankName.valueOf(bankNameStr) : null;
+                builder.bankAccountDetail(TreasuryAccount.BankAccountDetail.builder()
+                    .accountHolderName(bankHolderName)
+                    .bankName(bankName)
+                    .bankCode(rs.getString("bank_code"))
+                    .branchCode(rs.getString("branch_code"))
+                    .accountNumber(rs.getString("account_number"))
+                    .ribKey(rs.getString("rib_key"))
+                    .build());
+            }
+        } else if (type == TreasuryAccount.AccountType.MOBILE_MONEY) {
+            String mmHolderName = rs.getString("mm_holder_name");
+            String providerStr = rs.getString("provider");
+            if (mmHolderName != null || providerStr != null) {
+                TreasuryAccount.MobileMoneyProvider provider = providerStr != null ? TreasuryAccount.MobileMoneyProvider.valueOf(providerStr) : null;
+                builder.mobileMoneyAccountDetail(TreasuryAccount.MobileMoneyAccountDetail.builder()
+                    .accountHolderName(mmHolderName)
+                    .provider(provider)
+                    .phoneNumber(rs.getString("phone_number"))
+                    .build());
+            }
+        }
+
+        return builder.build();
     }
 }
