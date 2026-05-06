@@ -97,9 +97,11 @@ public class MemberRepository {
             ps.executeUpdate();
             
             connection.commit();
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
             try {
                 connection.rollback();
+                connection.setAutoCommit(true);
             } catch (SQLException e1) {
                 throw new RuntimeException(e1);
             }
