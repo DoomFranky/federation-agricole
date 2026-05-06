@@ -125,9 +125,9 @@ public class CollectivityMembershipRepository {
     public String findActiveMembershipId(String memberId, String collectivityId) {
         String sql;
         if (collectivityId != null) {
-            sql = "SELECT id FROM collectivity_membership WHERE member_id = ? AND collectivity_id = ? AND left_at IS NULL";
+            sql = "SELECT id FROM collectivity_membership WHERE member_id = ? AND collectivity_id = ? AND left_at IS NULL AND resignation = FALSE";
         } else {
-            sql = "SELECT id FROM collectivity_membership WHERE member_id = ? AND left_at IS NULL LIMIT 1";
+            sql = "SELECT id FROM collectivity_membership WHERE member_id = ? AND left_at IS NULL AND resignation = FALSE LIMIT 1";
         }
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, memberId);
