@@ -97,6 +97,12 @@ public class PaymentService {
             throw new NotFoundException("Account not found: " + dto.accountCreditedIdentifier());
         }
 
+        // Ensure the provided membership fee (dues rule) exists in the database
+        var duesRule = duesRuleRepository.findById(dto.membershipFeeIdentifier());
+        if (duesRule == null) {
+            throw new BadRequestException("Membership fee not found: " + dto.membershipFeeIdentifier());
+        }
+
         TreasuryAccount.AccountType expectedType = paymentModeToAccountType(dto.paymentMode());
         if (account.getAccountType() != expectedType) {
             throw new BadRequestException(
