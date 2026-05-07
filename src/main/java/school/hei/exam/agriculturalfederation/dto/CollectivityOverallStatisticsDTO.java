@@ -4,6 +4,7 @@ public class CollectivityOverallStatisticsDTO {
     private CollectivityInformationDTO collectivityInformation;
     private Integer newMembersNumber;
     private Double overallMemberCurrentDuePercentage;
+    private Double overallMemberAssiduityPercentage;
 
     public CollectivityOverallStatisticsDTO() {
     }
@@ -23,6 +24,11 @@ public class CollectivityOverallStatisticsDTO {
         return this;
     }
 
+    public CollectivityOverallStatisticsDTO overallMemberAssiduityPercentage(Double overallMemberAssiduityPercentage) {
+        this.overallMemberAssiduityPercentage = overallMemberAssiduityPercentage;
+        return this;
+    }
+
     public CollectivityInformationDTO getCollectivityInformation() {
         return collectivityInformation;
     }
@@ -33,5 +39,9 @@ public class CollectivityOverallStatisticsDTO {
 
     public Double getOverallMemberCurrentDuePercentage() {
         return overallMemberCurrentDuePercentage;
+    }
+
+    public Double getOverallMemberAssiduityPercentage() {
+        return overallMemberAssiduityPercentage;
     }
 }

@@ -58,9 +58,9 @@ CREATE TYPE activity_scope AS ENUM (
     );
 
 CREATE TYPE activity_type AS ENUM (
-    'MONTHLY_GENERAL_ASSEMBLY',
-    'JUNIOR_TRAINING',
-    'EXCEPTIONAL'
+    'MEETING',
+    'TRAINING',
+    'OTHER'
     );
 
 -- ---------------------------------------------------------------------------
@@ -301,6 +301,12 @@ CREATE TABLE activity_target_occupation (
 );
 
 -- ---------------------------------------------------------------------------
+-- ATTENDANCE STATUS ENUM
+-- ---------------------------------------------------------------------------
+
+CREATE TYPE attendance_status AS ENUM ('MISSING', 'ATTENDED', 'UNDEFINED');
+
+-- ---------------------------------------------------------------------------
 -- ATTENDANCE  (fiche de présence)
 -- ---------------------------------------------------------------------------
 
@@ -310,7 +316,7 @@ CREATE TABLE attendance (
                             member_id       VARCHAR(255) NOT NULL REFERENCES member(id),
     -- Home collectivity at time of activity (for assiduity calculation scope)
                             home_collectivity_id VARCHAR(255) REFERENCES collectivity(id),
-                            is_present      BOOLEAN NOT NULL,
+                            attendance_status attendance_status NOT NULL DEFAULT 'UNDEFINED',
                             is_excused      BOOLEAN NOT NULL DEFAULT FALSE,
                             excuse_note     TEXT,
     -- TRUE if this member is a guest from another collectivity

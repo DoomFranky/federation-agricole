@@ -88,6 +88,9 @@ public class StatisticsRepository {
             ps.setDate(2, Date.valueOf(to));
             ps.setString(3, collectivityId);
             ps.setString(4, collectivityId);
+            ps.setString(5, collectivityId);
+            ps.setDate(6, Date.valueOf(from));
+            ps.setDate(7, Date.valueOf(to));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     results.add(mapToLocalStatistics(rs));
@@ -117,11 +120,23 @@ public class StatisticsRepository {
                            WHERE pr.collected_at BETWEEN date_range.from_date AND date_range.to_date
                            GROUP BY pr.collectivity_membership_id
                        ) paid ON paid.collectivity_membership_id = cm.id
-                        LEFT JOIN dues_rule d ON d.collectivity_id = cm.collectivity_id AND d.effective_to IS NULL
+                       LEFT JOIN dues_rule d ON d.collectivity_id = cm.collectivity_id AND d.effective_to IS NULL
                        WHERE cm.collectivity_id = c.id
                        AND cm.joined_at <= date_range.to_date
                        AND (cm.left_at IS NULL OR cm.left_at > date_range.to_date)
-                   ), 0) as dues_percentage
+                   ), 0) as dues_percentage,
+                   COALESCE((
+                       SELECT (COUNT(DISTINCT att.id) FILTER (WHERE att.attendance_status = 'ATTENDED'))::float * 100.0 /
+                              NULLIF(COUNT(DISTINCT att.id), 0)::float
+                       FROM activity a
+                       JOIN attendance att ON att.activity_id = a.id
+                       JOIN collectivity_membership cm ON cm.member_id = att.member_id
+                       WHERE a.collectivity_id = c.id
+                       AND a.scheduled_at BETWEEN date_range.from_date AND date_range.to_date
+                       AND cm.collectivity_id = c.id
+                       AND cm.joined_at <= date_range.to_date
+                       AND (cm.left_at IS NULL OR cm.left_at > date_range.to_date)
+                   ), 0) as assiduity_percentage
             FROM collectivity c
             CROSS JOIN date_range
             WHERE EXISTS (SELECT 1 FROM collectivity_membership cm WHERE cm.collectivity_id = c.id)
@@ -150,7 +165,8 @@ public class StatisticsRepository {
         return new CollectivityLocalStatisticsDTO()
             .memberDescription(memberDesc)
             .earnedAmount(rs.getDouble("earned_amount"))
-            .unpaidAmount(rs.getDouble("unpaid_amount"));
+            .unpaidAmount(rs.getDouble("unpaid_amount"))
+            .assiduityPercentage(rs.getDouble("assiduity_percentage"));
     }
 
     private CollectivityOverallStatisticsDTO mapToOverallStatistics(ResultSet rs) throws SQLException {
@@ -160,6 +176,7 @@ public class StatisticsRepository {
         return new CollectivityOverallStatisticsDTO()
             .collectivityInformation(info)
             .newMembersNumber(rs.getInt("new_members"))
-            .overallMemberCurrentDuePercentage(rs.getDouble("dues_percentage"));
+            .overallMemberCurrentDuePercentage(rs.getDouble("dues_percentage"))
+            .overallMemberAssiduityPercentage(rs.getDouble("assiduity_percentage"));
     }
 }
