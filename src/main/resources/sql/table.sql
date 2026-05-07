@@ -370,3 +370,7 @@ CREATE INDEX idx_mandate_member          ON collectivity_mandate (member_id, col
 
 ALTER TABLE payment_receipt
     ADD COLUMN IF NOT EXISTS treasury_account_id VARCHAR(255) REFERENCES treasury_account(id);
+
+
+ALTER TYPE activity_type ADD VALUE 'PUNCTUAL';
+
