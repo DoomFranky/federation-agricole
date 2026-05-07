@@ -41,8 +41,9 @@ public class StatisticsRepository {
                 WHERE cm.collectivity_id = ?
                 AND (pr.collected_at IS NULL OR pr.collected_at BETWEEN date_range.from_date AND date_range.to_date)
                 GROUP BY cm.member_id, m.first_name, m.last_name, m.email, cm.occupation,cm.joined_at
-            )
-            SELECT mp.member_id, mp.first_name, mp.last_name, mp.email, mp.occupation,
+            ),
+            member_activities AS (
+                SELECT mp.member_id, mp.first_name, mp.last_name, mp.email, mp.occupation,
                    mp.earned as earned_amount,
                    GREATEST(0,
                         CASE 
@@ -81,7 +82,29 @@ public class StatisticsRepository {
                             WHEN d.frequency = 'WEEKLY' THEN
                                 CEIL(((SELECT to_date - from_date FROM date_range)/7.0) -1)* d.amount_mga - mp.earned
                         ELSE 0 END) as unpaid_amount
-            FROM member_payments mp LEFT JOIN dues d ON 1=1
+                FROM member_payments mp LEFT JOIN dues d ON 1=1
+            ),
+            activity_attendance AS (
+                SELECT cm.member_id,
+                       COUNT(DISTINCT a.id) as total_activities,
+                       COUNT(DISTINCT CASE WHEN att.attendance_status = 'ATTENDED' THEN a.id END) as attended_activities
+                FROM collectivity_membership cm
+                JOIN activity a ON a.collectivity_id = cm.collectivity_id
+                LEFT JOIN attendance att ON att.activity_id = a.id AND att.member_id = cm.member_id
+                JOIN activity_target_occupation ato ON ato.activity_id = a.id
+                WHERE cm.collectivity_id = ?
+                AND a.scheduled_at BETWEEN ? AND ?
+                AND ato.occupation = cm.occupation
+                GROUP BY cm.member_id
+            )
+                SELECT ma.member_id, ma.first_name, ma.last_name, ma.email, ma.occupation,
+                   ma.earned_amount, ma.unpaid_amount,
+                   CASE WHEN aa.total_activities > 0 THEN
+                       (aa.attended_activities::float * 100.0 / aa.total_activities::float)
+                   ELSE 0 END as assiduity_percentage
+                FROM member_activities ma
+                LEFT JOIN activity_attendance aa ON aa.member_id = ma.member_id
+            
             """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setDate(1, Date.valueOf(from));
