@@ -4,6 +4,7 @@ public class CollectivityLocalStatisticsDTO {
     private MemberDescriptionDTO memberDescription;
     private Double earnedAmount;
     private Double unpaidAmount;
+    private Double assiduityPercentage;
 
     public CollectivityLocalStatisticsDTO() {
     }
@@ -23,6 +24,11 @@ public class CollectivityLocalStatisticsDTO {
         return this;
     }
 
+    public CollectivityLocalStatisticsDTO assiduityPercentage(Double assiduityPercentage) {
+        this.assiduityPercentage = assiduityPercentage;
+        return this;
+    }
+
     public MemberDescriptionDTO getMemberDescription() {
         return memberDescription;
     }
@@ -33,5 +39,9 @@ public class CollectivityLocalStatisticsDTO {
 
     public Double getUnpaidAmount() {
         return unpaidAmount;
+    }
+
+    public Double getAssiduityPercentage() {
+        return assiduityPercentage;
     }
 }

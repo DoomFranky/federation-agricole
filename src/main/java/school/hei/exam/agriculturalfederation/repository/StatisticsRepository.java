@@ -42,25 +42,50 @@ public class StatisticsRepository {
                 WHERE cm.collectivity_id = ?
                 AND (pr.collected_at IS NULL OR pr.collected_at BETWEEN date_range.from_date AND date_range.to_date)
                 GROUP BY cm.member_id, m.first_name, m.last_name, m.email, cm.occupation
+            ),
+            member_activities AS (
+                SELECT mp.member_id, mp.first_name, mp.last_name, mp.email, mp.occupation,
+                       mp.earned as earned_amount,
+                       GREATEST(0,
+                           CASE WHEN d.frequency = 'MONTHLY' THEN
+                               (SELECT EXTRACT(YEAR FROM to_date)*12 + EXTRACT(MONTH FROM to_date)
+                                        - EXTRACT(YEAR FROM from_date)*12 - EXTRACT(MONTH FROM from_date) + 1
+                                FROM date_range) * d.amount_mga - mp.earned
+                            WHEN d.frequency = 'ANNUALLY' THEN d.amount_mga - mp.earned
+                            WHEN d.frequency = 'WEEKLY' THEN
+                                CEIL((SELECT to_date - from_date FROM date_range)/7.0) * d.amount_mga - mp.earned
+                            ELSE 0 END) as unpaid_amount
+                FROM member_payments mp LEFT JOIN dues d ON 1=1
+            ),
+            activity_attendance AS (
+                SELECT cm.member_id,
+                       COUNT(DISTINCT a.id) as total_activities,
+                       COUNT(DISTINCT CASE WHEN att.attendance_status = 'ATTENDED' THEN a.id END) as attended_activities
+                FROM collectivity_membership cm
+                JOIN activity a ON a.collectivity_id = cm.collectivity_id
+                LEFT JOIN attendance att ON att.activity_id = a.id AND att.member_id = cm.member_id
+                JOIN activity_target_occupation ato ON ato.activity_id = a.id
+                WHERE cm.collectivity_id = ?
+                AND a.scheduled_at BETWEEN ? AND ?
+                AND ato.occupation = cm.occupation
+                GROUP BY cm.member_id
             )
-            SELECT mp.member_id, mp.first_name, mp.last_name, mp.email, mp.occupation,
-                   mp.earned as earned_amount,
-                   GREATEST(0,
-                       CASE WHEN d.frequency = 'MONTHLY' THEN
-                           (SELECT EXTRACT(YEAR FROM to_date)*12 + EXTRACT(MONTH FROM to_date)
-                                    - EXTRACT(YEAR FROM from_date)*12 - EXTRACT(MONTH FROM from_date) + 1
-                            FROM date_range) * d.amount_mga - mp.earned
-                        WHEN d.frequency = 'ANNUALLY' THEN d.amount_mga - mp.earned
-                        WHEN d.frequency = 'WEEKLY' THEN
-                            CEIL((SELECT to_date - from_date FROM date_range)/7.0) * d.amount_mga - mp.earned
-                        ELSE 0 END) as unpaid_amount
-            FROM member_payments mp LEFT JOIN dues d ON 1=1
+            SELECT ma.member_id, ma.first_name, ma.last_name, ma.email, ma.occupation,
+                   ma.earned_amount, ma.unpaid_amount,
+                   CASE WHEN aa.total_activities > 0 THEN
+                       (aa.attended_activities::float * 100.0 / aa.total_activities::float)
+                   ELSE 0 END as assiduity_percentage
+            FROM member_activities ma
+            LEFT JOIN activity_attendance aa ON aa.member_id = ma.member_id
             """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setDate(1, Date.valueOf(from));
             ps.setDate(2, Date.valueOf(to));
             ps.setString(3, collectivityId);
             ps.setString(4, collectivityId);
+            ps.setString(5, collectivityId);
+            ps.setDate(6, Date.valueOf(from));
+            ps.setDate(7, Date.valueOf(to));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     results.add(mapToLocalStatistics(rs));
@@ -90,11 +115,23 @@ public class StatisticsRepository {
                            WHERE pr.collected_at BETWEEN date_range.from_date AND date_range.to_date
                            GROUP BY pr.collectivity_membership_id
                        ) paid ON paid.collectivity_membership_id = cm.id
-                        LEFT JOIN dues_rule d ON d.collectivity_id = cm.collectivity_id AND d.effective_to IS NULL
+                       LEFT JOIN dues_rule d ON d.collectivity_id = cm.collectivity_id AND d.effective_to IS NULL
                        WHERE cm.collectivity_id = c.id
                        AND cm.joined_at <= date_range.to_date
                        AND (cm.left_at IS NULL OR cm.left_at > date_range.to_date)
-                   ), 0) as dues_percentage
+                   ), 0) as dues_percentage,
+                   COALESCE((
+                       SELECT (COUNT(DISTINCT att.id) FILTER (WHERE att.attendance_status = 'ATTENDED'))::float * 100.0 /
+                              NULLIF(COUNT(DISTINCT att.id), 0)::float
+                       FROM activity a
+                       JOIN attendance att ON att.activity_id = a.id
+                       JOIN collectivity_membership cm ON cm.member_id = att.member_id
+                       WHERE a.collectivity_id = c.id
+                       AND a.scheduled_at BETWEEN date_range.from_date AND date_range.to_date
+                       AND cm.collectivity_id = c.id
+                       AND cm.joined_at <= date_range.to_date
+                       AND (cm.left_at IS NULL OR cm.left_at > date_range.to_date)
+                   ), 0) as assiduity_percentage
             FROM collectivity c
             CROSS JOIN date_range
             WHERE EXISTS (SELECT 1 FROM collectivity_membership cm WHERE cm.collectivity_id = c.id)
@@ -123,7 +160,8 @@ public class StatisticsRepository {
         return new CollectivityLocalStatisticsDTO()
             .memberDescription(memberDesc)
             .earnedAmount(rs.getDouble("earned_amount"))
-            .unpaidAmount(rs.getDouble("unpaid_amount"));
+            .unpaidAmount(rs.getDouble("unpaid_amount"))
+            .assiduityPercentage(rs.getDouble("assiduity_percentage"));
     }
 
     private CollectivityOverallStatisticsDTO mapToOverallStatistics(ResultSet rs) throws SQLException {
@@ -133,6 +171,7 @@ public class StatisticsRepository {
         return new CollectivityOverallStatisticsDTO()
             .collectivityInformation(info)
             .newMembersNumber(rs.getInt("new_members"))
-            .overallMemberCurrentDuePercentage(rs.getDouble("dues_percentage"));
+            .overallMemberCurrentDuePercentage(rs.getDouble("dues_percentage"))
+            .overallMemberAssiduityPercentage(rs.getDouble("assiduity_percentage"));
     }
 }
