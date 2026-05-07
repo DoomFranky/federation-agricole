@@ -374,3 +374,5 @@ ALTER TABLE payment_receipt
 
 ALTER TYPE activity_type ADD VALUE 'PUNCTUAL';
 
+alter table membership_referee
+    alter column relationship_nature set default 'AMI';

@@ -3,7 +3,6 @@ package school.hei.exam.agriculturalfederation.service;
 import org.springframework.stereotype.Service;
 import school.hei.exam.agriculturalfederation.dto.CreateMemberDTO;
 import school.hei.exam.agriculturalfederation.dto.MemberRestDTO;
-import school.hei.exam.agriculturalfederation.dto.RefereeDTO;
 import school.hei.exam.agriculturalfederation.entity.GenderEnum;
 import school.hei.exam.agriculturalfederation.entity.Member;
 import school.hei.exam.agriculturalfederation.entity.OccupationEnum;
@@ -88,7 +87,7 @@ public class MemberService {
                     newMember.getPhoneNumber(),
                     newMember.getEmail(),
                     newMember.getOccupation().name(),
-                    buildRefereeDTOs(refereeMembers)
+                    refereeMembers
                 )
             );
         }
@@ -148,18 +147,18 @@ public class MemberService {
         }
     }
 
-    private List<RefereeInfo> buildRefereeInfos(List<RefereeDTO> refereeDTOs) {
+    private List<RefereeInfo> buildRefereeInfos(List<String> refereeIds) {
         List<RefereeInfo> infos = new ArrayList<>();
-        for (RefereeDTO ref : refereeDTOs) {
-            String collectivityId = membershipRepository.findMemberCollectivityId(ref.getMemberIdentifier());
+        for (String refereeId : refereeIds) {
+            String collectivityId = membershipRepository.findMemberCollectivityId(refereeId);
             if (collectivityId == null) {
-                throw new NotFoundException("Referee is not an active member of any collectivity: " + ref.getMemberIdentifier());
+                throw new NotFoundException("Referee is not an active member of any collectivity: " + refereeId);
             }
             infos.add(new RefereeInfo(
                 null,
-                ref.getMemberIdentifier(),
+                refereeId,
                 collectivityId,
-                ref.getRelationshipNature()
+                "AMI"
             ));
         }
         return infos;
@@ -179,10 +178,6 @@ public class MemberService {
         member.setOccupation(OccupationEnum.JUNIOR);
         memberRepository.create(member, uuid);
         return memberRepository.findById(uuid.toString());
-    }
-
-    private List<Member> buildRefereeDTOs(List<Member> members) {
-        return members;
     }
 
     public Member getMemberById(String id) {

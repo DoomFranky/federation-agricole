@@ -14,7 +14,7 @@ public class CreateMemberDTO {
     private String email;
     private String occupation;
     private String collectivityIdentifier;
-    private List<RefereeDTO> referees;
+    private List<String> referees;
     private Boolean registrationFeePaid;
     private Boolean membershipDuesPaid;
 
@@ -23,7 +23,7 @@ public class CreateMemberDTO {
 
     public CreateMemberDTO(String firstName, String lastName, LocalDate birthDate, String gender, String address,
             String profession, String phoneNumber, String email, String occupation,
-            String collectivityIdentifier, List<RefereeDTO> referees, Boolean registrationFeePaid,
+            String collectivityIdentifier, List<String> referees, Boolean registrationFeePaid,
             Boolean membershipDuesPaid) {
         this.firstName = firstName;
         this.lastName = lastName;
@@ -48,11 +48,11 @@ public class CreateMemberDTO {
         this.collectivityIdentifier = collectivityIdentifier;
     }
 
-    public List<RefereeDTO> getReferees() {
+    public List<String> getReferees() {
         return referees;
     }
 
-    public void setReferees(List<RefereeDTO> referees) {
+    public void setReferees(List<String> referees) {
         this.referees = referees;
     }
 
