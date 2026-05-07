@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import school.hei.exam.agriculturalfederation.dto.CollectivityLocalStatisticsDTO;
+import school.hei.exam.agriculturalfederation.dto.CollectivityOverallStatisticsDTO;
 import school.hei.exam.agriculturalfederation.dto.CollectivityTransactionDTO;
 import school.hei.exam.agriculturalfederation.dto.FinancialAccountDTO;
 import school.hei.exam.agriculturalfederation.dto.IdentityCollectivityDTO;
@@ -19,6 +21,7 @@ import school.hei.exam.agriculturalfederation.exception.BadRequestException;
 import school.hei.exam.agriculturalfederation.exception.ConflictException;
 import school.hei.exam.agriculturalfederation.exception.NotFoundException;
 import school.hei.exam.agriculturalfederation.service.CollectivityService;
+import school.hei.exam.agriculturalfederation.service.StatisticsService;
 import school.hei.exam.agriculturalfederation.service.TransactionService;
 import school.hei.exam.agriculturalfederation.service.TreasuryAccountService;
 
@@ -30,11 +33,14 @@ public class CollectivityController {
     private final CollectivityService collectivityService;
     private final TransactionService transactionService;
     private final TreasuryAccountService treasuryAccountService;
+    private final StatisticsService statisticsService;
 
-    public CollectivityController(CollectivityService collectivityService, TransactionService transactionService, TreasuryAccountService treasuryAccountService) {
+    public CollectivityController(CollectivityService collectivityService, TransactionService transactionService,
+                               TreasuryAccountService treasuryAccountService, StatisticsService statisticsService) {
         this.collectivityService = collectivityService;
         this.transactionService = transactionService;
         this.treasuryAccountService = treasuryAccountService;
+        this.statisticsService = statisticsService;
     }
 
     @PostMapping("/collectivities")
@@ -118,6 +124,39 @@ public class CollectivityController {
             return ResponseEntity.ok(accounts);
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/collectivites/{id}/statistics")
+    public ResponseEntity<?> getLocalStatistics(
+            @PathVariable String id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        try {
+            List<CollectivityLocalStatisticsDTO> stats = statisticsService.getLocalStatistics(id, from, to);
+            return ResponseEntity.ok(stats);
+        } catch (BadRequestException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/collectivites/statistics")
+    public ResponseEntity<?> getOverallStatistics(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        try {
+            List<CollectivityOverallStatisticsDTO> stats = statisticsService.getOverallStatistics(from, to);
+            return ResponseEntity.ok(stats);
+        } catch (BadRequestException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }

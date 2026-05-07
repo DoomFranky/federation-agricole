@@ -54,11 +54,10 @@ public class TransactionService {
                             .findFirst().orElse(null);
                     }
                     if (ta != null) {
-                        acc = FinancialAccountDTO.builder()
+                        acc = new FinancialAccountDTO()
                             .id(ta.getId())
                             .accountType(ta.getAccountType().name())
-                            .amount(ta.getBalanceMga())
-                            .build();
+                            .amount(ta.getBalanceMga());
                     }
                 }
                 return new CollectivityTransactionDTO(

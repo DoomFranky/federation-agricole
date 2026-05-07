@@ -128,11 +128,10 @@ public class PaymentService {
         accountRepository.updateBalance(account.getId(), newBalance, transactionDate);
 
         TreasuryAccount updatedAccount = accountRepository.findById(account.getId());
-        FinancialAccountDTO accDto = FinancialAccountDTO.builder()
+        FinancialAccountDTO accDto = new FinancialAccountDTO()
             .id(updatedAccount.getId())
             .accountType(updatedAccount.getAccountType().name())
-            .amount(updatedAccount.getBalanceMga())
-            .build();
+            .amount(updatedAccount.getBalanceMga());
 
         return new MemberPaymentDTO(
             receipt.getId(),

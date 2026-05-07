@@ -62,7 +62,7 @@ public class TreasuryAccountService {
             mobileNumber = account.getMobileMoneyAccountDetail().getPhoneNumber();
         }
 
-        return FinancialAccountDTO.builder()
+        return new FinancialAccountDTO()
             .id(account.getId())
             .accountType(account.getAccountType().name())
             .amount(account.getBalanceMga())
@@ -73,7 +73,6 @@ public class TreasuryAccountService {
             .accountNumber(accountNumber)
             .ribKey(ribKey)
             .mobileService(mobileService)
-            .mobileNumber(mobileNumber)
-            .build();
+            .mobileNumber(mobileNumber);
     }
 }
