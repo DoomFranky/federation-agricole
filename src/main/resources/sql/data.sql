@@ -689,3 +689,344 @@ VALUES
     ('CM-C3-M13', 'C3-M2', 'col-3', NULL),
     ('CM-C3-M14', 'C3-M1', 'col-3', NULL),
     ('CM-C3-M14', 'C3-M2', 'col-3', NULL);
+
+-- ============================================================================
+-- BONUS — ACTIVITIES & ATTENDANCE
+-- ============================================================================
+
+-- ============================================================================
+-- 1) ACTIVITIES
+-- ============================================================================
+
+-- Note: activities are recurring (no fixed scheduled_at date).
+-- We use a representative past anchor date + recurrence_rule to describe the pattern.
+-- act-5 is a one-off punctual activity on 30/04/2026.
+
+
+INSERT INTO activity (
+    id,
+    collectivity_id,
+    federation_id,
+    scope,
+    activity_type,
+    title,
+    description,
+    scheduled_at,
+    is_mandatory,
+    recurrence_rule
+)
+VALUES
+    -- Collectivity 1
+    (
+        'act-1',
+        'col-1', NULL,
+        'COLLECTIVITY',
+        'MEETING',
+        'AG1',
+        NULL,
+        '2026-03-07 00:00:00+00',   -- 1st Saturday of March 2026 (anchor)
+        TRUE,
+        '1st Saturday of each month'
+    ),
+    (
+        'act-2',
+        'col-1', NULL,
+        'COLLECTIVITY',
+        'TRAINING',
+        'Formation de base',
+        NULL,
+        '2026-03-08 00:00:00+00',   -- 2nd Sunday of March 2026 (anchor)
+        TRUE,
+        '2nd Sunday of each month'
+    ),
+
+    -- Collectivity 2
+    (
+        'act-3',
+        'col-2', NULL,
+        'COLLECTIVITY',
+        'MEETING',
+        'AG2',
+        NULL,
+        '2026-03-01 00:00:00+00',   -- 1st Sunday of March 2026 (anchor)
+        TRUE,
+        '1st Sunday of each month'
+    ),
+    (
+        'act-4',
+        'col-2', NULL,
+        'COLLECTIVITY',
+        'TRAINING',
+        'Formation de base',
+        NULL,
+        '2026-03-15 00:00:00+00',   -- 3rd Sunday of March 2026 (anchor)
+        TRUE,
+        '3rd Sunday of each month'
+    ),
+    (
+        'act-5',
+        'col-2', NULL,
+        'COLLECTIVITY',
+        'OTHER',
+        'Perfectionnement',
+        NULL,
+        '2026-04-30 00:00:00+00',   -- one-off punctual activity
+        TRUE,
+        NULL
+    ),
+
+    -- Collectivity 3
+    (
+        'act-6',
+        'col-3', NULL,
+        'COLLECTIVITY',
+        'MEETING',
+        'AG3',
+        NULL,
+        '2026-03-06 00:00:00+00',   -- 1st Friday of March 2026 (anchor)
+        TRUE,
+        '1st Friday of each month'
+    ),
+    (
+        'act-7',
+        'col-3', NULL,
+        'COLLECTIVITY',
+        'TRAINING',
+        'Formation de base',
+        NULL,
+        '2026-03-25 00:00:00+00',   -- 4th Wednesday of March 2026 (anchor)
+        TRUE,
+        '4th Wednesday of each month'
+    );
+
+-- ============================================================================
+-- ACTIVITY TARGET OCCUPATIONS
+-- ============================================================================
+
+-- act-1 : AG1 — all occupations
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+                                                                     ('act-1', 'JUNIOR'),
+                                                                     ('act-1', 'SENIOR'),
+                                                                     ('act-1', 'SECRETARY'),
+                                                                     ('act-1', 'TREASURER'),
+                                                                     ('act-1', 'VICE_PRESIDENT'),
+                                                                     ('act-1', 'PRESIDENT');
+
+-- act-2 : Formation de base col-1 — JUNIOR only
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+    ('act-2', 'JUNIOR');
+
+-- act-3 : AG2 — all occupations
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+                                                                     ('act-3', 'JUNIOR'),
+                                                                     ('act-3', 'SENIOR'),
+                                                                     ('act-3', 'SECRETARY'),
+                                                                     ('act-3', 'TREASURER'),
+                                                                     ('act-3', 'VICE_PRESIDENT'),
+                                                                     ('act-3', 'PRESIDENT');
+
+-- act-4 : Formation de base col-2 — JUNIOR only
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+    ('act-4', 'JUNIOR');
+
+-- act-5 : Perfectionnement — SENIOR only
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+    ('act-5', 'SENIOR');
+
+-- act-6 : AG3 — all occupations
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+                                                                     ('act-6', 'JUNIOR'),
+                                                                     ('act-6', 'SENIOR'),
+                                                                     ('act-6', 'SECRETARY'),
+                                                                     ('act-6', 'TREASURER'),
+                                                                     ('act-6', 'VICE_PRESIDENT'),
+                                                                     ('act-6', 'PRESIDENT');
+
+-- act-7 : Formation de base col-3 — JUNIOR only
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+    ('act-7', 'JUNIOR');
+
+-- ============================================================================
+-- 2) ATTENDANCE
+-- attendance_status: 'ATTENDED' = Présent, 'MISSING' = Absent, 'UNDEFINED' = Non-défini
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- act-1 : AG1 — collectivity 1 — March 2026 (07/03/2026)
+-- ---------------------------------------------------------------------------
+INSERT INTO attendance (activity_id, member_id, home_collectivity_id, attendance_status)
+VALUES
+    ('act-1', 'C1-M1', 'col-1', 'ATTENDED'),
+    ('act-1', 'C1-M2', 'col-1', 'ATTENDED'),
+    ('act-1', 'C1-M3', 'col-1', 'ATTENDED'),
+    ('act-1', 'C1-M4', 'col-1', 'ATTENDED'),
+    ('act-1', 'C1-M5', 'col-1', 'ATTENDED'),
+    ('act-1', 'C1-M6', 'col-1', 'ATTENDED'),
+    ('act-1', 'C1-M7', 'col-1', 'MISSING'),
+    ('act-1', 'C1-M8', 'col-1', 'MISSING');
+
+-- ---------------------------------------------------------------------------
+-- act-1 : AG1 — collectivity 1 — April 2026 (04/04/2026)
+-- The activity is recurring: a second session needs its own activity row
+-- (same activity definition but different date).
+-- We create act-1-apr as a second occurrence.
+-- ---------------------------------------------------------------------------
+INSERT INTO activity (
+    id, collectivity_id, federation_id, scope, activity_type,
+    title, description, scheduled_at, is_mandatory, recurrence_rule
+)
+VALUES (
+           'act-1-apr',
+           'col-1', NULL,
+           'COLLECTIVITY',
+           'MEETING',
+           'AG1',
+           NULL,
+           '2026-04-04 00:00:00+00',
+           TRUE,
+           '1st Saturday of each month'
+       );
+
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+                                                                     ('act-1-apr', 'JUNIOR'),
+                                                                     ('act-1-apr', 'SENIOR'),
+                                                                     ('act-1-apr', 'SECRETARY'),
+                                                                     ('act-1-apr', 'TREASURER'),
+                                                                     ('act-1-apr', 'VICE_PRESIDENT'),
+                                                                     ('act-1-apr', 'PRESIDENT');
+
+INSERT INTO attendance (activity_id, member_id, home_collectivity_id, attendance_status)
+VALUES
+    ('act-1-apr', 'C1-M1', 'col-1', 'ATTENDED'),
+    ('act-1-apr', 'C1-M2', 'col-1', 'ATTENDED'),
+    ('act-1-apr', 'C1-M3', 'col-1', 'MISSING'),
+    ('act-1-apr', 'C1-M4', 'col-1', 'MISSING'),
+    ('act-1-apr', 'C1-M5', 'col-1', 'ATTENDED'),
+    ('act-1-apr', 'C1-M6', 'col-1', 'ATTENDED'),
+    ('act-1-apr', 'C1-M7', 'col-1', 'ATTENDED'),
+    ('act-1-apr', 'C1-M8', 'col-1', 'ATTENDED');
+
+-- ---------------------------------------------------------------------------
+-- act-3 : AG2 — collectivity 2 — March 2026 (08/03/2026)
+-- ---------------------------------------------------------------------------
+INSERT INTO attendance (activity_id, member_id, home_collectivity_id, attendance_status)
+VALUES
+    ('act-3', 'C1-M1', 'col-2', 'ATTENDED'),
+    ('act-3', 'C1-M2', 'col-2', 'ATTENDED'),
+    ('act-3', 'C1-M3', 'col-2', 'MISSING'),
+    ('act-3', 'C1-M4', 'col-2', 'MISSING'),
+    ('act-3', 'C1-M5', 'col-2', 'ATTENDED'),
+    ('act-3', 'C1-M6', 'col-2', 'ATTENDED'),
+    ('act-3', 'C1-M7', 'col-2', 'ATTENDED'),
+    ('act-3', 'C1-M8', 'col-2', 'ATTENDED');
+
+-- ---------------------------------------------------------------------------
+-- act-3 : AG2 — collectivity 2 — April 2026 (05/04/2026)
+-- ---------------------------------------------------------------------------
+INSERT INTO activity (
+    id, collectivity_id, federation_id, scope, activity_type,
+    title, description, scheduled_at, is_mandatory, recurrence_rule
+)
+VALUES (
+           'act-3-apr',
+           'col-2', NULL,
+           'COLLECTIVITY',
+           'MEETING',
+           'AG2',
+           NULL,
+           '2026-04-05 00:00:00+00',
+           TRUE,
+           '1st Sunday of each month'
+       );
+
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+                                                                     ('act-3-apr', 'JUNIOR'),
+                                                                     ('act-3-apr', 'SENIOR'),
+                                                                     ('act-3-apr', 'SECRETARY'),
+                                                                     ('act-3-apr', 'TREASURER'),
+                                                                     ('act-3-apr', 'VICE_PRESIDENT'),
+                                                                     ('act-3-apr', 'PRESIDENT');
+
+INSERT INTO attendance (activity_id, member_id, home_collectivity_id, attendance_status)
+VALUES
+    ('act-3-apr', 'C1-M1', 'col-2', 'ATTENDED'),
+    ('act-3-apr', 'C1-M2', 'col-2', 'ATTENDED'),
+    ('act-3-apr', 'C1-M3', 'col-2', 'MISSING'),
+    ('act-3-apr', 'C1-M4', 'col-2', 'ATTENDED'),
+    ('act-3-apr', 'C1-M5', 'col-2', 'ATTENDED'),
+    ('act-3-apr', 'C1-M6', 'col-2', 'ATTENDED'),
+    ('act-3-apr', 'C1-M7', 'col-2', 'ATTENDED'),
+    ('act-3-apr', 'C1-M8', 'col-2', 'MISSING');
+
+-- ---------------------------------------------------------------------------
+-- act-5 : Perfectionnement — collectivity 2 — 30/04/2026
+-- ---------------------------------------------------------------------------
+INSERT INTO attendance (activity_id, member_id, home_collectivity_id, attendance_status)
+VALUES
+    ('act-5', 'C1-M1', 'col-2', 'ATTENDED'),
+    ('act-5', 'C1-M2', 'col-2', 'ATTENDED'),
+    ('act-5', 'C1-M3', 'col-2', 'ATTENDED'),
+    ('act-5', 'C1-M4', 'col-2', 'MISSING'),
+    ('act-5', 'C1-M5', 'col-2', 'UNDEFINED'),
+    ('act-5', 'C1-M6', 'col-2', 'UNDEFINED'),
+    ('act-5', 'C1-M7', 'col-2', 'UNDEFINED'),
+    ('act-5', 'C1-M8', 'col-2', 'UNDEFINED');
+
+-- ---------------------------------------------------------------------------
+-- act-6 : AG3 — collectivity 3 — March 2026 (06/03/2026)
+-- ---------------------------------------------------------------------------
+INSERT INTO attendance (activity_id, member_id, home_collectivity_id, attendance_status)
+VALUES
+    ('act-6', 'C3-M1', 'col-3', 'ATTENDED'),
+    ('act-6', 'C3-M2', 'col-3', 'ATTENDED'),
+    ('act-6', 'C3-M3', 'col-3', 'ATTENDED'),
+    ('act-6', 'C3-M4', 'col-3', 'ATTENDED'),
+    ('act-6', 'C3-M5', 'col-3', 'ATTENDED'),
+    ('act-6', 'C3-M6', 'col-3', 'ATTENDED'),
+    ('act-6', 'C3-M7', 'col-3', 'MISSING'),
+    ('act-6', 'C3-M8', 'col-3', 'MISSING');   -- PDF says "Nom membre 9" but ID is C3-M8
+
+-- ---------------------------------------------------------------------------
+-- act-6 : AG3 — collectivity 3 — April 2026 (03/04/2026)
+-- C1-M1 attends as a guest from col-1
+-- ---------------------------------------------------------------------------
+INSERT INTO activity (
+    id, collectivity_id, federation_id, scope, activity_type,
+    title, description, scheduled_at, is_mandatory, recurrence_rule
+)
+VALUES (
+           'act-6-apr',
+           'col-3', NULL,
+           'COLLECTIVITY',
+           'MEETING',
+           'AG3',
+           NULL,
+           '2026-04-03 00:00:00+00',
+           TRUE,
+           '1st Friday of each month'
+       );
+
+INSERT INTO activity_target_occupation (activity_id, occupation) VALUES
+                                                                     ('act-6-apr', 'JUNIOR'),
+                                                                     ('act-6-apr', 'SENIOR'),
+                                                                     ('act-6-apr', 'SECRETARY'),
+                                                                     ('act-6-apr', 'TREASURER'),
+                                                                     ('act-6-apr', 'VICE_PRESIDENT'),
+                                                                     ('act-6-apr', 'PRESIDENT');
+
+INSERT INTO attendance (activity_id, member_id, home_collectivity_id, attendance_status, is_guest)
+VALUES
+    ('act-6-apr', 'C3-M1', 'col-3', 'ATTENDED',  FALSE),
+    ('act-6-apr', 'C3-M2', 'col-3', 'ATTENDED',  FALSE),
+    ('act-6-apr', 'C3-M3', 'col-3', 'MISSING',   FALSE),
+    ('act-6-apr', 'C3-M4', 'col-3', 'MISSING',   FALSE),
+    ('act-6-apr', 'C3-M5', 'col-3', 'ATTENDED',  FALSE),
+    ('act-6-apr', 'C3-M6', 'col-3', 'ATTENDED',  FALSE),
+    ('act-6-apr', 'C3-M7', 'col-3', 'MISSING',   FALSE),
+    ('act-6-apr', 'C3-M8', 'col-3', 'ATTENDED',  FALSE),
+    ('act-6-apr', 'C1-M1', 'col-1', 'ATTENDED',  TRUE);   -- guest from col-1
+
+
+UPDATE activity
+SET activity_type = 'PUNCTUAL'
+WHERE id = 'act-5';
