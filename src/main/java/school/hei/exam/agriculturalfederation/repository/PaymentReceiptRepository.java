@@ -60,7 +60,7 @@ public class PaymentReceiptRepository {
     public List<PaymentReceipt> findByMembership(String membershipId) {
         List<PaymentReceipt> receipts = new ArrayList<>();
         String sql = """
-            SELECT id, collectivity_membership_id, dues_rule_id, amount_mga, payment_method, collected_at, collected_by_treasurer, notes
+            SELECT id, collectivity_membership_id, dues_rule_id, amount_mga, payment_method, collected_at, collected_by_treasurer, notes, treasury_account_id
             FROM payment_receipt
             WHERE collectivity_membership_id = ?
             ORDER BY collected_at DESC
@@ -82,7 +82,7 @@ public class PaymentReceiptRepository {
         List<PaymentReceipt> receipts = new ArrayList<>();
         String sql = """
             SELECT pr.id, pr.collectivity_membership_id, pr.dues_rule_id, pr.amount_mga, pr.payment_method,
-                   pr.collected_at, pr.collected_by_treasurer, pr.notes,
+                   pr.collected_at, pr.collected_by_treasurer, pr.notes, pr.treasury_account_id,
                    m.id as member_id, m.first_name, m.last_name, m.birth_date, m.gender, m.address,
                    m.profession, m.phone_number, m.email, cm.occupation
             FROM payment_receipt pr

@@ -46,19 +46,23 @@ public class TransactionService {
         return paymentRepository.findByCollectivityInPeriod(collectivityId, from, to).stream()
             .map(receipt -> {
                 FinancialAccountDTO acc = null;
-                if (receipt.getMembershipId() != null) {
+                TreasuryAccount ta = null;
+                if (receipt.getTreasuryAccountId() != null) {
+                    ta = accountRepository.findById(receipt.getTreasuryAccountId());
+                }
+                if (ta == null) {
                     AccountType accountType = paymentMethodToAccountType(receipt.getPaymentMethod());
-                    TreasuryAccount ta = accountRepository.findByCollectivityAndType(collectivityId, accountType);
-                    if (ta == null) {
-                        ta = accountRepository.findByCollectivity(collectivityId).stream()
-                            .findFirst().orElse(null);
-                    }
-                    if (ta != null) {
-                        acc = new FinancialAccountDTO()
-                            .id(ta.getId())
-                            .accountType(ta.getAccountType().name())
-                            .amount(ta.getBalanceMga());
-                    }
+                    ta = accountRepository.findByCollectivityAndType(collectivityId, accountType);
+                }
+                if (ta == null) {
+                    ta = accountRepository.findByCollectivity(collectivityId).stream()
+                        .findFirst().orElse(null);
+                }
+                if (ta != null) {
+                    acc = new FinancialAccountDTO()
+                        .id(ta.getId())
+                        .accountType(ta.getAccountType().name())
+                        .amount(ta.getBalanceMga());
                 }
                 return new CollectivityTransactionDTO(
                     receipt.getId(),
