@@ -6,7 +6,6 @@ import school.hei.exam.agriculturalfederation.dto.CollectivityLocalStatisticsDTO
 import school.hei.exam.agriculturalfederation.dto.CollectivityOverallStatisticsDTO;
 import school.hei.exam.agriculturalfederation.dto.MemberDescriptionDTO;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -29,11 +28,11 @@ public class StatisticsRepository {
         String sql = """
             WITH date_range AS (SELECT ?::date as from_date, ?::date as to_date),
             dues AS (
-                SELECT amount_mga, frequency FROM dues_rule
+                SELECT amount_mga, frequency, effective_from FROM dues_rule
                 WHERE collectivity_id = ? AND effective_to IS NULL LIMIT 1
             ),
             member_payments AS (
-                SELECT cm.member_id, m.first_name, m.last_name, m.email, cm.occupation,
+                SELECT cm.member_id, m.first_name, m.last_name, m.email, cm.occupation, cm.joined_at,
                        COALESCE(SUM(pr.amount_mga), 0) as earned
                 FROM collectivity_membership cm
                 JOIN member m ON m.id = cm.member_id
@@ -41,18 +40,46 @@ public class StatisticsRepository {
                 CROSS JOIN date_range
                 WHERE cm.collectivity_id = ?
                 AND (pr.collected_at IS NULL OR pr.collected_at BETWEEN date_range.from_date AND date_range.to_date)
-                GROUP BY cm.member_id, m.first_name, m.last_name, m.email, cm.occupation
+                GROUP BY cm.member_id, m.first_name, m.last_name, m.email, cm.occupation,cm.joined_at
             )
             SELECT mp.member_id, mp.first_name, mp.last_name, mp.email, mp.occupation,
                    mp.earned as earned_amount,
                    GREATEST(0,
-                       CASE WHEN d.frequency = 'MONTHLY' THEN
-                           (SELECT EXTRACT(YEAR FROM to_date)*12 + EXTRACT(MONTH FROM to_date)
-                                    - EXTRACT(YEAR FROM from_date)*12 - EXTRACT(MONTH FROM from_date) + 1
-                            FROM date_range) * d.amount_mga - mp.earned
-                        WHEN d.frequency = 'ANNUALLY' THEN d.amount_mga - mp.earned
-                        WHEN d.frequency = 'WEEKLY' THEN
-                            CEIL((SELECT to_date - from_date FROM date_range)/7.0) * d.amount_mga - mp.earned
+                        CASE 
+                            WHEN d.frequency = 'MONTHLY' THEN
+                                CASE WHEN (SELECT from_date FROM date_range) < mp.joined_at THEN
+                                    CASE WHEN mp.joined_at < d.effective_from THEN
+                                        (SELECT EXTRACT(YEAR FROM to_date)*12 + EXTRACT(MONTH FROM to_date)
+                                            - EXTRACT(YEAR FROM d.effective_from)*12 - EXTRACT(MONTH FROM d.effective_from)
+                                        FROM date_range) * d.amount_mga - mp.earned
+                                    ELSE
+                                        (SELECT EXTRACT(YEAR FROM to_date)*12 + EXTRACT(MONTH FROM to_date)
+                                            - EXTRACT(YEAR FROM mp.joined_at)*12 - EXTRACT(MONTH FROM mp.joined_at)
+                                        FROM date_range) * d.amount_mga - mp.earned
+                                    END
+                                ELSE
+                                    (SELECT EXTRACT(YEAR FROM to_date)*12 + EXTRACT(MONTH FROM to_date)
+                                        - EXTRACT(YEAR FROM from_date)*12 - EXTRACT(MONTH FROM from_date)
+                                    FROM date_range) * d.amount_mga - mp.earned
+                                END
+                            WHEN d.frequency = 'ANNUALLY' THEN 
+                                CASE WHEN (SELECT from_date FROM date_range) < mp.joined_at THEN
+                                    CASE WHEN mp.joined_at < d.effective_from THEN
+                                        (SELECT EXTRACT(YEAR FROM to_date)
+                                                - EXTRACT(YEAR FROM d.effective_from)
+                                        FROM date_range) * d.amount_mga - mp.earned
+                                    ELSE
+                                        (SELECT EXTRACT(YEAR FROM to_date) 
+                                                - EXTRACT(YEAR FROM mp.joined_at)
+                                        FROM date_range) * d.amount_mga - mp.earned
+                                    END
+                                ELSE
+                                    (SELECT EXTRACT(YEAR FROM to_date)
+                                                - EXTRACT(YEAR FROM from_date)
+                                        FROM date_range) * d.amount_mga - mp.earned
+                                END
+                            WHEN d.frequency = 'WEEKLY' THEN
+                                CEIL(((SELECT to_date - from_date FROM date_range)/7.0) -1)* d.amount_mga - mp.earned
                         ELSE 0 END) as unpaid_amount
             FROM member_payments mp LEFT JOIN dues d ON 1=1
             """;
